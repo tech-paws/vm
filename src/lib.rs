@@ -1,3 +1,5 @@
+use std::{mem, ops};
+
 #[repr(C)]
 pub struct RegionMemoryBuffer {
     pub size: u64,
@@ -17,7 +19,55 @@ extern "C" {
 
     pub fn region_memory_buffer_alloc(buffer: *mut RegionMemoryBuffer, size: u64) -> *mut u8;
 
+    pub fn region_memory_buffer_emplace(
+        buffer: *mut RegionMemoryBuffer,
+        size: u64,
+        data: *const u8,
+    ) -> *mut u8;
+
     pub fn region_memory_buffer_free(buffer: *mut RegionMemoryBuffer);
+}
+
+#[repr(C)]
+pub struct CommandPayload {
+    pub size: u64,
+    pub base: *mut u8,
+}
+
+#[repr(C)]
+pub struct Command {
+    pub id: u64,
+    pub payload: CommandPayload,
+}
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone, Default)]
+pub struct Vec2f {
+    pub x: f32,
+    pub y: f32,
+}
+
+impl Vec2f {
+    pub const ZERO: Vec2f = Vec2f::new(0., 0.);
+
+    pub const fn new(x: f32, y: f32) -> Vec2f {
+        Vec2f { x, y }
+    }
+}
+
+impl ops::Add<Vec2f> for Vec2f {
+    type Output = Vec2f;
+
+    fn add(self, rhs: Vec2f) -> Vec2f {
+        Vec2f::new(self.x + rhs.x, self.y + rhs.y)
+    }
+}
+
+impl ops::AddAssign<Vec2f> for Vec2f {
+    fn add_assign(&mut self, other: Self) {
+        self.x += other.x;
+        self.y += other.y;
+    }
 }
 
 struct RegionAllocator {
@@ -49,6 +99,22 @@ impl RegionAllocator {
         region_memory_buffer_free(&mut self.region as *mut RegionMemoryBuffer);
         Ok(())
     }
+
+    unsafe fn emplace_struct<T>(&mut self, value: T) -> Result<*mut T, &'static str> {
+        let value_ptr = &value as *const T;
+        let data = region_memory_buffer_emplace(
+            &mut self.region as *mut RegionMemoryBuffer,
+            mem::size_of::<T>() as u64,
+            value_ptr as *const u8,
+        );
+
+        if data.is_null() {
+            Err("Out of memory")
+        }
+        else {
+            Ok(data as *mut T)
+        }
+    }
 }
 
 pub mod render_state {
@@ -72,7 +138,7 @@ pub mod render_state {
 }
 
 pub mod render_commands {
-    use crate::RegionAllocator;
+    use crate::{Command, RegionAllocator};
     use lazy_static::lazy_static;
     use std::sync::Mutex;
 
@@ -89,11 +155,16 @@ pub mod render_commands {
         let mut allocator = ALLOCATOR.lock().expect("failed to get allocator");
         allocator.clear()
     }
+
+    pub unsafe fn push_command(command: Command) -> Result<(), &'static str> {
+        Ok(())
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::*;
+    use assert_approx_eq::assert_approx_eq;
 
     #[test]
     fn test_virtual_alloc() {
@@ -134,6 +205,19 @@ mod tests {
 
             assert!(!sub_region.base.is_null());
             assert_eq!(512, region.offset);
+        }
+    }
+
+    #[test]
+    fn test_region_allocator_emplace_struct() {
+        unsafe {
+            let mut allocator = RegionAllocator::new(1024);
+            let vec = Vec2f::new(10., 20.);
+            let vec = allocator.emplace_struct(vec).unwrap().as_ref().unwrap();
+
+            assert_eq!(mem::size_of::<Vec2f>(), allocator.region.offset);
+            assert_approx_eq!(10., vec.x);
+            assert_approx_eq!(20., vec.y);
         }
     }
 }

@@ -7,5 +7,5 @@ struct CommandPayload {
 
 struct Command {
     struct CommandPayload payload;
-    uint8_t type;
+    uint32_t type;
 };

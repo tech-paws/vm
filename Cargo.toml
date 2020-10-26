@@ -9,6 +9,7 @@ edition = "2018"
 [dependencies]
 bumpalo = "3.4.0"
 lazy_static = "1.4.0"
+assert_approx_eq = "1.1.0"
 
 [build-dependencies]
 cc = "1.0"

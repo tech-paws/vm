@@ -1,3 +1,4 @@
+#include <string.h>
 #include <assert.h>
 #include <stdio.h>
 #include "types.h"
@@ -58,6 +59,12 @@ u8* region_memory_buffer_alloc(struct RegionMemoryBuffer* buffer, u64 size) {
     u8* result = buffer->base + buffer->offset;
     buffer->offset += size;
 
+    return result;
+}
+
+u8* region_memory_buffer_emplace(struct RegionMemoryBuffer* buffer, u64 size, u8 const* data) {
+    u8* result = region_memory_buffer_alloc(buffer, size);
+    memcpy(result, data, size);
     return result;
 }
 
