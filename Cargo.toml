@@ -1,5 +1,5 @@
 [package]
-name = "vm-memory-manager"
+name = "vm"
 version = "0.1.0"
 authors = ["Andrey Kabylin <andrey@kabylin.ru>"]
 edition = "2018"

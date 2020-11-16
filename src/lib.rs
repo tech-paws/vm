@@ -5,6 +5,8 @@
 pub mod allocator;
 pub mod c_api;
 pub mod data;
+pub mod commands;
+pub mod gapi;
 
 // /// Render state memory allocator.
 // pub mod render_state {

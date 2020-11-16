@@ -1,11 +1,11 @@
-#include <stdint.h>
+#include "types.h"
 
 struct CommandPayload {
-    uint32_t size;
-    uint8_t* base;
+    u32 size;
+    u8* base;
 };
 
 struct Command {
     struct CommandPayload payload;
-    uint32_t type;
+    u32 type;
 };

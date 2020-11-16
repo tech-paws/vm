@@ -33,7 +33,7 @@ impl RegionAllocator {
     /// # Examples
     ///
     /// ```
-    /// # use vm_memory_manager::allocator::*;
+    /// # use vm::allocator::*;
     /// let mut allocator = RegionAllocator::new(1024);
     /// let base = unsafe { allocator.alloc(512) };
     /// assert!(base.is_ok());
@@ -66,8 +66,8 @@ impl RegionAllocator {
     /// ```rust
     /// # use assert_approx_eq::assert_approx_eq;
     /// # use std::mem;
-    /// # use vm_memory_manager::allocator::*;
-    /// # use vm_memory_manager::data::*;
+    /// # use vm::allocator::*;
+    /// # use vm::data::*;
     /// #
     /// let mut allocator = RegionAllocator::new(1024);
     /// let vec = Vec2f::new(10., 20.);
