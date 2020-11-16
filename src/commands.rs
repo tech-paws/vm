@@ -3,64 +3,64 @@
 // TODO(sysint64): Write proper documentation for each of the commands.
 
 /// Execute macro.
-pub const EXECUTE_MACRO: u64 = 0001_0001;
+pub const EXECUTE_MACRO: u64 = 0x0001_0001;
 
 /// Start recording macro.
-pub const BEGIN_MACRO: u64 = 0001_0002;
+pub const BEGIN_MACRO: u64 = 0x0001_0002;
 
 /// End recording macro.
-pub const END_MACRO: u64 = 0001_0003;
+pub const END_MACRO: u64 = 0x0001_0003;
 
 /// Graphical API commands.
 pub mod gapi {
     /// Command id to draw lines.
-    pub const DRAW_LINES: u64 = 0002_0001;
+    pub const DRAW_LINES: u64 = 0x0002_0001;
 
     /// Command id to draw quads.
-    pub const DRAW_QUADS: u64 = 0002_0002;
+    pub const DRAW_QUADS: u64 = 0x0002_0002;
 
     /// Command id to draw texts.
-    pub const DRAW_TEXTS: u64 = 0002_0003;
+    pub const DRAW_TEXTS: u64 = 0x0002_0003;
 
     /// Set current pipelen to colorize.
-    pub const SET_COLOR_PIPELINE: u64 = 0002_0004;
+    pub const SET_COLOR_PIPELINE: u64 = 0x0002_0004;
 
     /// Set current pipelen to texture.
-    pub const SET_TEXTURE_PIPELINE: u64 = 0002_0005;
+    pub const SET_TEXTURE_PIPELINE: u64 = 0x0002_0005;
 }
 
 /// Transforms commands.
 pub mod transforms {
     /// Move.
-    pub const TRANSLATE: u64 = 0003_0001;
+    pub const TRANSLATE: u64 = 0x0003_0001;
 
     /// Rotate.
-    pub const ROTATE: u64 = 0003_0002;
+    pub const ROTATE: u64 = 0x0003_0002;
 
     /// Scale.
-    pub const SCALE: u64 = 0003_0003;
+    pub const SCALE: u64 = 0x0003_0003;
 }
 
 /// Commands to manage assets.
 pub mod assets {
     /// Load texture and save in memory.
-    pub const LOAD_TEXTURE: u64 = 0004_0001;
+    pub const LOAD_TEXTURE: u64 = 0x0004_0001;
 
     /// Load macro and save in memory.
-    pub const LOAD_MACRO: u64 = 0004_0002;
+    pub const LOAD_MACRO: u64 = 0x0004_0002;
 
     /// Remove texture from memory.
-    pub const REMOVE_TEXTURE: u64 = 0004_0003;
+    pub const REMOVE_TEXTURE: u64 = 0x0004_0003;
 
     /// Remove macro from memory.
-    pub const REMOVE_MACRO: u64 = 0004_0004;
+    pub const REMOVE_MACRO: u64 = 0x0004_0004;
 }
 
 /// State commands.
 pub mod state {
     /// Update current viewport size.
-    pub const UPDATE_VIEW_PORT: u64 = 0005_0001;
+    pub const UPDATE_VIEW_PORT: u64 = 0x0005_0001;
 
     /// Update current touch state.
-    pub const UPDATE_TOUCH_STATE: u64 = 0005_0002;
+    pub const UPDATE_TOUCH_STATE: u64 = 0x0005_0002;
 }
