@@ -29,7 +29,8 @@ extern "C" {
     /// # Examples
     ///
     /// ```
-    /// # use vm::c_api::*;
+    /// use vm::c_api::*;
+    ///
     /// let region = unsafe { create_region_memory_buffer(1024) };
     /// assert!(!region.base.is_null());
     /// ```
@@ -41,7 +42,8 @@ extern "C" {
     /// # Examples
     ///
     /// ```
-    /// # use vm::c_api::*;
+    /// use vm::c_api::*;
+    ///
     /// let mut region = unsafe { create_region_memory_buffer(1024) };
     /// let sub_region =
     ///     unsafe { region_memory_buffer_emplace_region(&mut region as *mut RegionMemoryBuffer, 512) };
@@ -62,7 +64,8 @@ extern "C" {
     /// # Examples
     ///
     /// ```
-    /// # use vm::c_api::*;
+    /// use vm::c_api::*;
+    ///
     /// let mut region = unsafe { create_region_memory_buffer(1024) };
     /// let base = unsafe { region_memory_buffer_alloc(&mut region as *mut RegionMemoryBuffer, 100) };
     ///
@@ -76,8 +79,9 @@ extern "C" {
     /// # Examples
     ///
     /// ```
-    /// # use vm::c_api::*;
-    /// # use std::mem;
+    /// use std::mem;
+    /// use vm::c_api::*;
+    ///
     /// let mut region = unsafe { create_region_memory_buffer(1024) };
     /// let value: i32 = 100;
     /// let value_ptr = &value as *const i32;
@@ -102,7 +106,8 @@ extern "C" {
     /// # Examples
     ///
     /// ```
-    /// # use vm::c_api::*;
+    /// use vm::c_api::*;
+    ///
     /// let mut region = unsafe { create_region_memory_buffer(1024) };
     /// unsafe { region_memory_buffer_alloc(&mut region as *mut RegionMemoryBuffer, 100) };
     /// unsafe { region_memory_buffer_free(&mut region as *mut RegionMemoryBuffer) };

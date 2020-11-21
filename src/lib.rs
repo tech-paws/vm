@@ -4,86 +4,47 @@
 
 pub mod allocator;
 pub mod c_api;
-pub mod data;
 pub mod commands;
+pub mod data;
 pub mod gapi;
 
-// /// Render state memory allocator.
-// pub mod render_state {
-//     use crate::RegionAllocator;
-//     use lazy_static::lazy_static;
-//     use std::sync::Mutex;
+use lazy_static::lazy_static;
+use std::sync::Mutex;
 
-//     lazy_static! {
-//         static ref ALLOCATOR: Mutex<RegionAllocator> = Mutex::new(RegionAllocator::new(1024));
-//     }
+use allocator::RegionAllocator;
+use data::Command;
 
-//     /// Allocate chunk of memory with particular size using global allocator.
-//     /// returns the base address of the allocated chunk of memory.
-//     ///
-//     /// # Errors
-//     ///
-//     /// If the memory is run out, then this call will return an error.
-//     ///
-//     /// # Panics
-//     ///
-//     /// This function might panic when called if the allocator lock is already
-//     /// held by the current thread.
-//     pub unsafe fn alloc(size: usize) -> Result<*mut u8, &'static str> {
-//         let mut allocator = ALLOCATOR.lock().expect("failed to get allocator");
-//         allocator.alloc(size)
-//     }
+lazy_static! {
+    static ref GAPI_COMMANDS_ALLOCATOR: Mutex<RegionAllocator> =
+        Mutex::new(RegionAllocator::new(1024));
+}
 
-//     /// Free all memory.
-//     ///
-//     /// # Panics
-//     ///
-//     /// This function might panic when called if the allocator lock is already
-//     /// held by the current thread.
-//     pub unsafe fn clear() -> Result<(), &'static str> {
-//         let mut allocator = ALLOCATOR.lock().expect("failed to get allocator");
-//         allocator.clear()
-//     }
-// }
+/// In what allocator put your data
+#[repr(C)]
+pub enum Source {
+    /// GAPI Allocator
+    GAPI = 0,
+}
 
-// /// Render commands memory allocator.
-// pub mod render_commands {
-//     use crate::RegionAllocator;
-//     use lazy_static::lazy_static;
-//     use std::sync::Mutex;
+/// Push command to the allocator `source`.
+///
+/// # Examples
+///
+/// ```rust
+/// # use assert_approx_eq::assert_approx_eq;
+/// use std::mem;
+/// use vm::allocator::*;
+/// use vm::data::*;
+///
+/// ```
+#[no_mangle]
+pub extern "C" fn push_command(command: Command, source: Source) {
+    let mut allocator_guard = match source {
+        Source::GAPI => GAPI_COMMANDS_ALLOCATOR.lock(),
+    };
 
-//     lazy_static! {
-//         static ref ALLOCATOR: Mutex<RegionAllocator> = Mutex::new(RegionAllocator::new(1024));
-//     }
+    let allocator = allocator_guard.as_mut().unwrap();
 
-//     /// Allocate chunk of memory with particular size, returns the base address of
-//     /// the allocated chunk of memory.
-//     ///
-//     /// # Errors
-//     ///
-//     /// If the memory is run out, then this call will return an error.
-//     ///
-//     /// # Panics
-//     ///
-//     /// This function might panic when called if the allocator lock is already
-//     /// held by the current thread.
-//     pub unsafe fn alloc(size: usize) -> Result<*mut u8, &'static str> {
-//         let mut allocator = ALLOCATOR.lock().expect("failed to get allocator");
-//         allocator.alloc(size)
-//     }
-
-//     /// Free all memory.
-//     ///
-//     /// # Panics
-//     ///
-//     /// This function might panic when called if the allocator lock is already
-//     /// held by the current thread.
-//     pub unsafe fn clear() -> Result<(), &'static str> {
-//         let mut allocator = ALLOCATOR.lock().expect("failed to get allocator");
-//         allocator.clear()
-//     }
-
-//     // pub unsafe fn push_command(command: Command) -> Result<(), &'static str> {
-//     // Ok(())
-//     // }
-// }
+    unsafe { allocator.emplace_struct(&command.id) }.unwrap();
+    unsafe { allocator.emplace_buffer(command.payload.base, command.payload.size) }.unwrap();
+}

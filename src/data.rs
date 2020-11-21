@@ -1,6 +1,6 @@
 //! Virtual machine primitive datas.
 
-use std::ops;
+use std::{mem, ops};
 
 /// Virtual machine command payload.
 #[repr(C)]
@@ -8,7 +8,7 @@ pub struct CommandPayload {
     /// Size of the data.
     pub size: u64,
     /// Base address of the data.
-    pub base: *mut u8,
+    pub base: *const u8,
 }
 
 /// Virtual machine command.
@@ -18,6 +18,23 @@ pub struct Command {
     pub id: u64,
     /// The data that holds the command.
     pub payload: CommandPayload,
+}
+
+impl Command {
+    fn new(id: u64, payload: CommandPayload) -> Self {
+        Command { id, payload }
+    }
+}
+
+impl CommandPayload {
+    unsafe fn new<T>(value: &T) -> Self {
+        let value_ptr = value as *const T;
+
+        CommandPayload {
+            size: mem::size_of::<T>() as u64,
+            base: value_ptr as *const u8,
+        }
+    }
 }
 
 /// 2D Vector with float components.
