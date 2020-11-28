@@ -1,6 +1,6 @@
 //! Virtual machine primitive datas.
 
-use std::{mem, ops};
+use std::{mem, ops, ptr::null};
 
 /// Virtual machine command payload.
 #[repr(C)]
@@ -24,15 +24,32 @@ impl Command {
     pub fn new(id: u64, payload: CommandPayload) -> Self {
         Command { id, payload }
     }
+
+    pub fn empty(id: u64) -> Self {
+        Command {
+            id,
+            payload: CommandPayload::empty(),
+        }
+    }
 }
 
 impl CommandPayload {
-    pub unsafe fn new<T>(value: &T) -> Self {
-        let value_ptr = value as *const T;
+    pub unsafe fn new<T>(values: &[T]) -> Self {
+        let base = values
+            .first()
+            .map(|value| value as *const T)
+            .unwrap_or(null::<T>());
 
         CommandPayload {
-            size: mem::size_of::<T>() as u64,
-            base: value_ptr as *const u8,
+            size: (mem::size_of::<T>() as u64) * (values.len() as u64),
+            base: base as *const u8,
+        }
+    }
+
+    pub fn empty() -> Self {
+        CommandPayload {
+            size: 0,
+            base: null::<u8>(),
         }
     }
 }

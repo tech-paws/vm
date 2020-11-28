@@ -19,6 +19,16 @@ lazy_static! {
         Mutex::new(RegionAllocator::new(1024));
 }
 
+pub trait Module {
+    fn init();
+
+    fn drop();
+
+    fn step();
+
+    fn render();
+}
+
 /// In what allocator put your data
 #[repr(C)]
 pub enum Source {
@@ -38,7 +48,7 @@ pub enum Source {
 /// use vm::data::*;
 /// use vm::*;
 ///
-/// let payload = unsafe { CommandPayload::new(&12) };
+/// let payload = unsafe { CommandPayload::new(&[12, 34, 55]) };
 /// let command = Command::new(commands::gapi::DRAW_LINES, payload);
 /// push_command(command, Source::GAPI);
 /// ```
