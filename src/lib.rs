@@ -34,8 +34,13 @@ pub enum Source {
 /// # use assert_approx_eq::assert_approx_eq;
 /// use std::mem;
 /// use vm::allocator::*;
+/// use vm::commands;
 /// use vm::data::*;
+/// use vm::*;
 ///
+/// let payload = unsafe { CommandPayload::new(&12) };
+/// let command = Command::new(commands::gapi::DRAW_LINES, payload);
+/// push_command(command, Source::GAPI);
 /// ```
 #[no_mangle]
 pub extern "C" fn push_command(command: Command, source: Source) {

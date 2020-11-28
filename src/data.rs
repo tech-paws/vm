@@ -21,13 +21,13 @@ pub struct Command {
 }
 
 impl Command {
-    fn new(id: u64, payload: CommandPayload) -> Self {
+    pub fn new(id: u64, payload: CommandPayload) -> Self {
         Command { id, payload }
     }
 }
 
 impl CommandPayload {
-    unsafe fn new<T>(value: &T) -> Self {
+    pub unsafe fn new<T>(value: &T) -> Self {
         let value_ptr = value as *const T;
 
         CommandPayload {
