@@ -12,10 +12,12 @@ use lazy_static::lazy_static;
 use std::sync::Mutex;
 
 use allocator::RegionAllocator;
-use data::Command;
+use data::{Command, CommandPayload};
 
 lazy_static! {
     static ref GAPI_COMMANDS_ALLOCATOR: Mutex<RegionAllocator> =
+        Mutex::new(RegionAllocator::new(1024));
+    static ref GAPI_COMMANDS_DATA_ALLOCATOR: Mutex<RegionAllocator> =
         Mutex::new(RegionAllocator::new(1024));
 }
 
@@ -54,12 +56,26 @@ pub enum Source {
 /// ```
 #[no_mangle]
 pub extern "C" fn push_command(command: Command, source: Source) {
-    let mut allocator_guard = match source {
-        Source::GAPI => GAPI_COMMANDS_ALLOCATOR.lock(),
+    let (mut commands_allocator_guard, mut commands_data_allocator_guard) = match source {
+        Source::GAPI => (
+            GAPI_COMMANDS_ALLOCATOR.lock(),
+            GAPI_COMMANDS_DATA_ALLOCATOR.lock(),
+        ),
     };
 
-    let allocator = allocator_guard.as_mut().unwrap();
+    let commands_allocator = commands_allocator_guard.as_mut().unwrap();
+    let commands_data_allocator = commands_data_allocator_guard.as_mut().unwrap();
 
-    unsafe { allocator.emplace_struct(&command.id) }.unwrap();
-    unsafe { allocator.emplace_buffer(command.payload.base, command.payload.size) }.unwrap();
+    let data = unsafe {
+        commands_data_allocator
+            .emplace_buffer(command.payload.base, command.payload.size)
+            .unwrap()
+    };
+
+    let command_payload = CommandPayload {
+        base: data,
+        size: command.payload.size,
+    };
+    let command = Command::new(command.id, command_payload);
+    unsafe { commands_allocator.emplace_struct(&command) }.unwrap();
 }
