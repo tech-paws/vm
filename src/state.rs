@@ -2,28 +2,23 @@
 
 use std::sync::Mutex;
 
-use crate::{allocator::RegionAllocator, module::Module};
+use crate::module::{Module, ModuleState};
 
 /// State structure.
 pub struct VMState {
-    // TODO(sysint64): Improve doc.
-    /// Rendering commands.
-    pub gapi_commands_allocator: Mutex<RegionAllocator>,
-
-    /// Here is a data that holds rendering commands.
-    pub gapi_commands_data_allocator: Mutex<RegionAllocator>,
-
     /// Connected modules.
     pub modules: Mutex<Vec<Box<dyn Module>>>,
+
+    /// Module states.
+    pub module_states: Mutex<Vec<Box<ModuleState>>>,
 }
 
 impl VMState {
     /// Create a new state.
     pub fn new() -> Self {
         VMState {
-            gapi_commands_allocator: Mutex::new(RegionAllocator::new(1024)),
-            gapi_commands_data_allocator: Mutex::new(RegionAllocator::new(1024)),
             modules: Mutex::new(Vec::new()),
+            module_states: Mutex::new(Vec::new()),
         }
     }
 }
