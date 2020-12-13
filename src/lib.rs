@@ -11,31 +11,19 @@ pub mod gapi;
 pub mod module;
 pub mod state;
 
+use module::{BenchmarkModule, ClientModule};
 use state::VMState;
 
-use data::Commands;
-
 static mut STATE: Option<VMState> = None;
-
-/// In what allocator put your data
-#[repr(C)]
-pub enum Source {
-    /// GAPI Allocator
-    GAPI = 0,
-}
 
 /// Initialize VM State.
 #[no_mangle]
 pub unsafe extern "C" fn init() {
-    STATE = Some(VMState::new());
-}
+    let mut state = VMState::new();
 
-/// Get all commands from the source.
-pub extern "C" fn get_commands(_source: Source) -> Commands {
-    todo!()
-}
+    // TODO(sysint64): register modules for demo
+    state.register_module(Box::new(ClientModule::new()));
+    state.register_module(Box::new(BenchmarkModule::new()));
 
-/// Clear all commands from the source.
-pub extern "C" fn clear_commands(_source: Source) {
-    todo!()
+    STATE = Some(state);
 }

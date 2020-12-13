@@ -1,6 +1,9 @@
 //! Commands Bus
 
-use crate::{STATE, data::{Command, CommandPayload}};
+use crate::{
+    data::{Command, CommandPayload},
+    STATE,
+};
 
 /// Commands bus. Used to communicate between modules.
 pub struct CommandsBus {}
@@ -13,7 +16,13 @@ pub enum Source {
 }
 
 impl CommandsBus {
-    /// Push command to the allocator `source`.
+    /// Create a new commands bus.
+    pub fn new() -> Self {
+        CommandsBus {}
+    }
+
+    /// Push command to module by address using the allocator `source` to
+    /// store commands.
     ///
     /// # Examples
     ///
@@ -22,6 +31,7 @@ impl CommandsBus {
     /// use std::mem;
     /// use vm::allocator::*;
     /// use vm::commands;
+    /// use vm::commands_bus::*;
     /// use vm::data::*;
     /// use vm::*;
     /// use vm::module;
@@ -29,11 +39,13 @@ impl CommandsBus {
     /// unsafe { vm::init() };
     /// let payload = unsafe { CommandPayload::new(&[12, 34, 55]) };
     /// let command = Command::new(commands::gapi::DRAW_LINES, payload);
-    /// unsafe { push_command(command, Source::GAPI) };
+    /// let commands_bus = CommandsBus::new();
+    /// commands_bus.push_command(module::CLIENT_ID, command, Source::GAPI);
+    /// // unsafe { push_command(command, Source::GAPI) };
     /// ```
-    pub unsafe fn push_command(address: usize, command: Command, source: Source) {
+    pub fn push_command(&self, address: usize, command: Command, source: Source) {
         // TODO(sysint64): handle unwraps.
-        let state = STATE.as_ref().unwrap();
+        let state = unsafe { STATE.as_ref() }.unwrap();
         let mut module_states_guard = state.module_states.lock();
         let module_states = module_states_guard.as_mut().unwrap();
         let module_state = module_states.get(address).unwrap();
@@ -48,15 +60,17 @@ impl CommandsBus {
         let commands_allocator = commands_allocator_guard.as_mut().unwrap();
         let commands_data_allocator = commands_data_allocator_guard.as_mut().unwrap();
 
-        let data = commands_data_allocator
-            .emplace_buffer(command.payload.base, command.payload.size)
-            .unwrap();
+        let data = unsafe {
+            commands_data_allocator
+                .emplace_buffer(command.payload.base, command.payload.size)
+                .unwrap()
+        };
 
         let command_payload = CommandPayload {
             base: data,
             size: command.payload.size,
         };
         let command = Command::new(command.id, command_payload);
-        commands_allocator.emplace_struct(&command).unwrap();
+        unsafe { commands_allocator.emplace_struct(&command) }.unwrap();
     }
 }
