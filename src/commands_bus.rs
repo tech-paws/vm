@@ -33,15 +33,14 @@ impl CommandsBus {
     /// use vm::commands;
     /// use vm::commands_bus::*;
     /// use vm::data::*;
-    /// use vm::*;
     /// use vm::module;
+    /// use vm::*;
     ///
     /// unsafe { vm::init() };
     /// let payload = unsafe { CommandPayload::new(&[12, 34, 55]) };
     /// let command = Command::new(commands::gapi::DRAW_LINES, payload);
     /// let commands_bus = CommandsBus::new();
     /// commands_bus.push_command(module::CLIENT_ID, command, Source::GAPI);
-    /// // unsafe { push_command(command, Source::GAPI) };
     /// ```
     pub fn push_command(&self, address: usize, command: Command, source: Source) {
         // TODO(sysint64): handle unwraps.
@@ -51,10 +50,12 @@ impl CommandsBus {
         let module_state = module_states.get(address).unwrap();
 
         let (mut commands_allocator_guard, mut commands_data_allocator_guard) = match source {
-            Source::GAPI => (
-                module_state.gapi_commands_allocator.lock(),
-                module_state.gapi_commands_data_allocator.lock(),
-            ),
+            Source::GAPI => {
+                (
+                    module_state.gapi_commands_allocator.lock(),
+                    module_state.gapi_commands_data_allocator.lock(),
+                )
+            }
         };
 
         let commands_allocator = commands_allocator_guard.as_mut().unwrap();

@@ -26,10 +26,7 @@ jobs:
           args: --all -- --check
 
   test-stable:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [macOS-latest, windows-2019, ubuntu-latest]
+    runs-on: ubuntu-latest
     name: cargo clippy+test
     steps:
       - uses: actions/checkout@v2
@@ -54,10 +51,7 @@ jobs:
 
   check-docs:
     name: Docs
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: install nightly toolchain
