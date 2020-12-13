@@ -20,11 +20,22 @@ pub struct Command {
     pub payload: CommandPayload,
 }
 
+/// Commands array.
+#[repr(C)]
+pub struct Commands {
+    /// Address to commands region
+    pub commands: *const Command,
+    /// Count of commands.
+    pub size: usize,
+}
+
 impl Command {
+    /// Create a new command with a given payload.
     pub fn new(id: u64, payload: CommandPayload) -> Self {
         Command { id, payload }
     }
 
+    /// Create a command without a payload.
     pub fn empty(id: u64) -> Self {
         Command {
             id,
@@ -34,7 +45,8 @@ impl Command {
 }
 
 impl CommandPayload {
-    pub unsafe fn new<T>(values: &[T]) -> Self {
+    /// Create a new payload with a given array.
+    pub fn new<T>(values: &[T]) -> Self {
         let base = values
             .first()
             .map(|value| value as *const T)
@@ -46,6 +58,7 @@ impl CommandPayload {
         }
     }
 
+    /// Create empty payload without any data.
     pub fn empty() -> Self {
         CommandPayload {
             size: 0,

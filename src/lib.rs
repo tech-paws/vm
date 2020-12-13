@@ -7,35 +7,27 @@ pub mod c_api;
 pub mod commands;
 pub mod data;
 pub mod gapi;
+pub mod module;
+pub mod state;
+pub mod commands_bus;
 
-use lazy_static::lazy_static;
-use std::sync::Mutex;
+use state::VMState;
 
-use allocator::RegionAllocator;
-use data::{Command, CommandPayload};
+use data::{Command, CommandPayload, Commands};
 
-lazy_static! {
-    static ref GAPI_COMMANDS_ALLOCATOR: Mutex<RegionAllocator> =
-        Mutex::new(RegionAllocator::new(1024));
-    static ref GAPI_COMMANDS_DATA_ALLOCATOR: Mutex<RegionAllocator> =
-        Mutex::new(RegionAllocator::new(1024));
-}
-
-pub trait Module {
-    fn init();
-
-    fn drop();
-
-    fn step();
-
-    fn render();
-}
+static mut STATE: Option<VMState> = None;
 
 /// In what allocator put your data
 #[repr(C)]
 pub enum Source {
     /// GAPI Allocator
     GAPI = 0,
+}
+
+/// Initialize VM State.
+#[no_mangle]
+pub unsafe extern "C" fn init() {
+    STATE = Some(VMState::new());
 }
 
 /// Push command to the allocator `source`.
@@ -50,32 +42,43 @@ pub enum Source {
 /// use vm::data::*;
 /// use vm::*;
 ///
+/// unsafe { vm::init() };
 /// let payload = unsafe { CommandPayload::new(&[12, 34, 55]) };
 /// let command = Command::new(commands::gapi::DRAW_LINES, payload);
-/// push_command(command, Source::GAPI);
+/// unsafe { push_command(command, Source::GAPI) };
 /// ```
 #[no_mangle]
-pub extern "C" fn push_command(command: Command, source: Source) {
+pub unsafe extern "C" fn push_command(command: Command, source: Source) {
+    let state = STATE.as_ref().unwrap();
+
     let (mut commands_allocator_guard, mut commands_data_allocator_guard) = match source {
         Source::GAPI => (
-            GAPI_COMMANDS_ALLOCATOR.lock(),
-            GAPI_COMMANDS_DATA_ALLOCATOR.lock(),
+            state.gapi_commands_allocator.lock(),
+            state.gapi_commands_data_allocator.lock(),
         ),
     };
 
     let commands_allocator = commands_allocator_guard.as_mut().unwrap();
     let commands_data_allocator = commands_data_allocator_guard.as_mut().unwrap();
 
-    let data = unsafe {
-        commands_data_allocator
-            .emplace_buffer(command.payload.base, command.payload.size)
-            .unwrap()
-    };
+    let data = commands_data_allocator
+        .emplace_buffer(command.payload.base, command.payload.size)
+        .unwrap();
 
     let command_payload = CommandPayload {
         base: data,
         size: command.payload.size,
     };
     let command = Command::new(command.id, command_payload);
-    unsafe { commands_allocator.emplace_struct(&command) }.unwrap();
+    commands_allocator.emplace_struct(&command).unwrap();
+}
+
+/// Get all commands from the source.
+pub extern "C" fn get_commands(_source: Source) -> Commands {
+    todo!()
+}
+
+/// Clear all commands from the source.
+pub extern "C" fn clear_commands(_source: Source) {
+    todo!()
 }

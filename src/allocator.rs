@@ -13,7 +13,7 @@ pub struct RegionAllocator {
     pub region: RegionMemoryBuffer,
 }
 
-unsafe impl Send for RegionAllocator {}
+// unsafe impl Send for RegionAllocator {}
 
 impl RegionAllocator {
     /// Create a new allocator with a specific size.
