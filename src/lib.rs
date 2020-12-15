@@ -17,6 +17,10 @@ use state::VMState;
 static mut STATE: Option<VMState> = None;
 
 /// Initialize VM State.
+///
+/// # Safety
+///
+/// Should call once in the main thread.
 #[no_mangle]
 pub unsafe extern "C" fn init() {
     let mut state = VMState::new();

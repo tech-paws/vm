@@ -15,6 +15,12 @@ pub enum Source {
     GAPI = 0,
 }
 
+impl Default for CommandsBus {
+    fn default() -> Self {
+        CommandsBus::new()
+    }
+}
+
 impl CommandsBus {
     /// Create a new commands bus.
     pub fn new() -> Self {
@@ -72,6 +78,6 @@ impl CommandsBus {
             size: command.payload.size,
         };
         let command = Command::new(command.id, command_payload);
-        unsafe { commands_allocator.emplace_struct(&command) }.unwrap();
+        commands_allocator.emplace_struct(&command).unwrap();
     }
 }

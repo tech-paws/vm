@@ -48,6 +48,12 @@ pub struct ModuleState {
     pub commands_bus: CommandsBus,
 }
 
+impl Default for ModuleState {
+    fn default() -> Self {
+        ModuleState::new()
+    }
+}
+
 impl ModuleState {
     /// Create a new module state.
     pub fn new() -> Self {
@@ -61,6 +67,12 @@ impl ModuleState {
 
 /// Client module e.g. iOS application, web application etc.
 pub struct ClientModule {}
+
+impl Default for ClientModule {
+    fn default() -> Self {
+        ClientModule::new()
+    }
+}
 
 impl ClientModule {
     /// Create a new client module.
@@ -81,6 +93,12 @@ impl Module for ClientModule {
 
 /// Demo module
 pub struct BenchmarkModule {}
+
+impl Default for BenchmarkModule {
+    fn default() -> Self {
+        BenchmarkModule::new()
+    }
+}
 
 impl BenchmarkModule {
     /// Create a new benchmark module.

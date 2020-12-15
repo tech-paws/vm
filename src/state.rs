@@ -13,6 +13,12 @@ pub struct VMState {
     pub module_states: Mutex<Vec<ModuleState>>,
 }
 
+impl Default for VMState {
+    fn default() -> Self {
+        VMState::new()
+    }
+}
+
 impl VMState {
     /// Create a new state.
     pub fn new() -> Self {
