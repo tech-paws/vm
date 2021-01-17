@@ -44,6 +44,16 @@ impl Command {
     }
 }
 
+impl Commands {
+    /// Create a commands instance without commands.
+    pub fn empty() -> Self {
+        Commands {
+            size: 0,
+            commands: null::<Command>(),
+        }
+    }
+}
+
 impl CommandPayload {
     /// Create a new payload with a given array.
     pub fn new<T>(values: &[T]) -> Self {

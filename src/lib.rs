@@ -45,12 +45,12 @@ pub extern "C" fn tech_paws_vm_process_render_commands() {}
 
 #[no_mangle]
 pub extern "C" fn tech_paws_vm_consume_gapi_commands() -> Commands {
-    todo!()
+    Commands::empty()
 }
 
 #[no_mangle]
 pub extern "C" fn tech_paws_vm_consume_commands() -> Commands {
-    todo!()
+    Commands::empty()
 }
 
 #[no_mangle]
