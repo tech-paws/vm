@@ -13,6 +13,12 @@ pub struct RegionAllocator {
     pub region: RegionMemoryBuffer,
 }
 
+impl Default for RegionAllocator {
+    fn default() -> Self {
+        todo!()
+    }
+}
+
 // unsafe impl Send for RegionAllocator {}
 
 impl RegionAllocator {

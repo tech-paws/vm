@@ -33,6 +33,7 @@ impl VMState {
         let mut modules_guard = self.modules.lock();
         let mut modules_states_guard = self.module_states.lock();
 
+        // TODO(sysint64): handle unwraps.
         let modules = modules_guard.as_mut().unwrap();
         let modules_states = modules_states_guard.as_mut().unwrap();
 
@@ -40,5 +41,13 @@ impl VMState {
 
         modules.push(module);
         modules_states.push(ModuleState::new());
+    }
+
+    ///
+    pub fn step() {
+    }
+
+    ///
+    pub fn render() {
     }
 }

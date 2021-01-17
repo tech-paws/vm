@@ -77,6 +77,26 @@ pub struct Vec2f {
     pub y: f32,
 }
 
+/// 4D Vector with float components.
+#[derive(Debug, Copy, Clone, Default)]
+pub struct Vec4f {
+    /// x component.
+    pub x: f32,
+    /// y component.
+    pub y: f32,
+    /// z component.
+    pub z: f32,
+    /// w component.
+    pub w: f32,
+}
+
+/// 4x4 Matrix with float components.
+#[repr(C)]
+pub struct Mat4f {
+    /// Columns
+    pub col: [Vec4f; 4],
+}
+
 impl Vec2f {
     /// Const value for zero value: `Vec2::new(0., 0.)`.
     pub const ZERO: Vec2f = Vec2f::new(0., 0.);

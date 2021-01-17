@@ -65,32 +65,6 @@ impl ModuleState {
     }
 }
 
-/// Client module e.g. iOS application, web application etc.
-pub struct ClientModule {}
-
-impl Default for ClientModule {
-    fn default() -> Self {
-        ClientModule::new()
-    }
-}
-
-impl ClientModule {
-    /// Create a new client module.
-    pub fn new() -> Self {
-        ClientModule {}
-    }
-}
-
-impl Module for ClientModule {
-    fn init(&mut self, _: &mut ModuleState) {}
-
-    fn shutdown(&mut self, _: &mut ModuleState) {}
-
-    fn step(&mut self, _: &mut ModuleState) {}
-
-    fn render(&mut self, _: &mut ModuleState) {}
-}
-
 /// Demo module
 pub struct BenchmarkModule {}
 
