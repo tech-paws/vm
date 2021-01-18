@@ -7,7 +7,7 @@ use crate::{
     commands,
     commands_bus::CommandsBus,
     commands_bus::Source,
-    data::CommandPayload,
+    data::BytesBuffer,
     data::{Command, Vec2f},
 };
 
@@ -102,7 +102,7 @@ impl Module for BenchmarkModule {
             Vec2f::new(0.0, 100.0),
         ];
 
-        let command_payload = CommandPayload::new(&points);
+        let command_payload = BytesBuffer::new(&points);
         let command = Command::new(commands::gapi::DRAW_PATH, command_payload);
 
         commands_bus.push_command(CLIENT_ID, command, Source::GAPI);

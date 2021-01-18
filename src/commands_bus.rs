@@ -1,7 +1,7 @@
 //! Commands Bus
 
 use crate::{
-    data::{Command, CommandPayload},
+    data::{Command, BytesBuffer},
     STATE,
 };
 
@@ -73,7 +73,7 @@ impl CommandsBus {
                 .unwrap()
         };
 
-        let command_payload = CommandPayload {
+        let command_payload = BytesBuffer {
             base: data,
             size: command.payload.size,
         };

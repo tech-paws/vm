@@ -4,7 +4,7 @@ use std::{mem, ops, ptr::null};
 
 /// Virtual machine command payload.
 #[repr(C)]
-pub struct CommandPayload {
+pub struct BytesBuffer {
     /// Size of the data.
     pub size: u64,
     /// Base address of the data.
@@ -17,7 +17,7 @@ pub struct Command {
     /// Unique id of the command.
     pub id: u64,
     /// The data that holds the command.
-    pub payload: CommandPayload,
+    pub payload: BytesBuffer,
 }
 
 /// Commands array.
@@ -31,7 +31,7 @@ pub struct Commands {
 
 impl Command {
     /// Create a new command with a given payload.
-    pub fn new(id: u64, payload: CommandPayload) -> Self {
+    pub fn new(id: u64, payload: BytesBuffer) -> Self {
         Command { id, payload }
     }
 
@@ -39,7 +39,7 @@ impl Command {
     pub fn empty(id: u64) -> Self {
         Command {
             id,
-            payload: CommandPayload::empty(),
+            payload: BytesBuffer::empty(),
         }
     }
 }
@@ -54,7 +54,7 @@ impl Commands {
     }
 }
 
-impl CommandPayload {
+impl BytesBuffer {
     /// Create a new payload with a given array.
     pub fn new<T>(values: &[T]) -> Self {
         let base = values
@@ -62,7 +62,7 @@ impl CommandPayload {
             .map(|value| value as *const T)
             .unwrap_or(null::<T>());
 
-        CommandPayload {
+        BytesBuffer {
             size: (mem::size_of::<T>() as u64) * (values.len() as u64),
             base: base as *const u8,
         }
@@ -70,7 +70,7 @@ impl CommandPayload {
 
     /// Create empty payload without any data.
     pub fn empty() -> Self {
-        CommandPayload {
+        BytesBuffer {
             size: 0,
             base: null::<u8>(),
         }
