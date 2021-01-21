@@ -2,6 +2,14 @@
 
 // TODO(sysint64): Write proper documentation for each of the commands.
 
+/// In what allocator put your data
+#[derive(Clone, Copy)]
+#[repr(C)]
+pub enum Source {
+    /// GAPI Allocator
+    GAPI = 0,
+}
+
 /// Execute macro.
 pub const EXECUTE_MACRO: u64 = 0x0001_0001;
 

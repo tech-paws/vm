@@ -1,19 +1,11 @@
 //! Commands Bus
 
-use crate::{
-    data::{Command, BytesBuffer},
-    STATE,
-};
+use std::mem;
+
+use crate::{STATE, commands::Source, data::{Command, BytesBuffer}};
 
 /// Commands bus. Used to communicate between modules.
 pub struct CommandsBus {}
-
-/// In what allocator put your data
-#[repr(C)]
-pub enum Source {
-    /// GAPI Allocator
-    GAPI = 0,
-}
 
 impl Default for CommandsBus {
     fn default() -> Self {
@@ -43,17 +35,15 @@ impl CommandsBus {
     /// use vm::*;
     ///
     /// unsafe { vm::init() };
-    /// let payload = unsafe { CommandPayload::new(&[12, 34, 55]) };
+    /// let payload = unsafe { BytesBuffer::new(&[12, 34, 55]) };
     /// let command = Command::new(commands::gapi::DRAW_LINES, payload);
     /// let commands_bus = CommandsBus::new();
-    /// commands_bus.push_command(module::CLIENT_ID, command, Source::GAPI);
+    /// commands_bus.push_command(module::CLIENT_ID, command, commands::Source::GAPI);
     /// ```
     pub fn push_command(&self, address: usize, command: Command, source: Source) {
         // TODO(sysint64): handle unwraps.
         let state = unsafe { STATE.as_ref() }.unwrap();
-        let mut module_states_guard = state.module_states.lock();
-        let module_states = module_states_guard.as_mut().unwrap();
-        let module_state = module_states.get(address).unwrap();
+        let module_state = state.module_states.get(address).unwrap();
 
         let (mut commands_allocator_guard, mut commands_data_allocator_guard) = match source {
             Source::GAPI => {

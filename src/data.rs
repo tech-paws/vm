@@ -3,6 +3,7 @@
 use std::{mem, ops, ptr::null};
 
 /// Virtual machine command payload.
+#[derive(Debug)]
 #[repr(C)]
 pub struct BytesBuffer {
     /// Size of the data.
@@ -12,6 +13,7 @@ pub struct BytesBuffer {
 }
 
 /// Virtual machine command.
+#[derive(Debug)]
 #[repr(C)]
 pub struct Command {
     /// Unique id of the command.
@@ -54,6 +56,33 @@ impl Commands {
     }
 }
 
+// pub enum CommandPayloadItem {
+//     Int32(i32),
+//     Int64(i64),
+//     Vec2f(Vec2f),
+//     Vec4f(Vec4f),
+// }
+
+// union CommandPayloadItemC {
+//     int32: i32,
+//     int64: i64,
+//     vec2f: Vec2f,
+//     vec4f: Vec4f,
+// }
+
+// struct CommandPayload {
+//     data: Vec<CommandPayloadItemC>,
+// }
+
+// impl CommandPayload {
+//     pub fn new(items: &[CommandPayloadItem]) -> Self {
+//         for item in items.iter() {
+//         }
+
+//         todo!()
+//     }
+// }
+
 impl BytesBuffer {
     /// Create a new payload with a given array.
     pub fn new<T>(values: &[T]) -> Self {
@@ -67,6 +96,11 @@ impl BytesBuffer {
             base: base as *const u8,
         }
     }
+
+    /// Create a new payload with a given array.
+    // pub fn new_command_payload(_values: &[CommandPayloadItem]) -> Self {
+        // todo!()
+    // }
 
     /// Create empty payload without any data.
     pub fn empty() -> Self {
@@ -114,6 +148,16 @@ impl Vec2f {
     /// Create a new vector.
     pub const fn new(x: f32, y: f32) -> Vec2f {
         Vec2f { x, y }
+    }
+}
+
+impl Vec4f {
+    /// Const value for zero value: `Vec4::new(0., 0., 0., 0.)`.
+    pub const ZERO: Vec4f = Vec4f::new(0., 0., 0., 0.);
+
+    /// Create a new vector.
+    pub const fn new(x: f32, y: f32, z: f32, w: f32) -> Vec4f {
+        Vec4f { x, y, z, w }
     }
 }
 

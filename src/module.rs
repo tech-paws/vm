@@ -1,14 +1,12 @@
 //! Module interface.
 
-use std::sync::Mutex;
+use std::{mem, ptr::null, sync::Mutex};
 
 use crate::{
     allocator::RegionAllocator,
-    commands,
+    commands::Source,
     commands_bus::CommandsBus,
-    commands_bus::Source,
-    data::BytesBuffer,
-    data::{Command, Vec2f},
+    data::{Command, Commands},
 };
 
 // TODO(sysint64): Make it dynamic
@@ -63,48 +61,62 @@ impl ModuleState {
             commands_bus: CommandsBus::new(),
         }
     }
+
+    /// Get commands from source.
+    pub fn get_commands(&mut self, source: Source) -> Commands {
+        let mut commands_allocator_guard = match source {
+            Source::GAPI => self.gapi_commands_allocator.lock(),
+        };
+
+        let commands_allocator = commands_allocator_guard.as_mut().unwrap();
+
+        Commands {
+            size: commands_allocator.region.offset as usize,
+            commands: commands_allocator.region.base as *mut Command,
+        }
+    }
+
+    /// Clear all commands and ther data from source.
+    pub fn clear_commands(&mut self, source: Source) -> Result<(), &'static str> {
+        let (mut commands_allocator_guard, mut commands_data_allocator_guard) = match source {
+            Source::GAPI => (
+                self.gapi_commands_allocator.try_lock(),
+                self.gapi_commands_data_allocator.try_lock(),
+            ),
+        };
+
+        let commands_allocator = commands_allocator_guard.as_mut().unwrap();
+        let commands_data_allocator = commands_data_allocator_guard.as_mut().unwrap();
+
+        commands_allocator.clear()?;
+        commands_data_allocator.clear()?;
+
+        Ok(())
+    }
 }
 
 /// Demo module
-pub struct BenchmarkModule {}
+pub struct ClientModule {}
 
-impl Default for BenchmarkModule {
+impl Default for ClientModule {
     fn default() -> Self {
-        BenchmarkModule::new()
+        ClientModule::new()
     }
 }
 
-impl BenchmarkModule {
+impl ClientModule {
     /// Create a new benchmark module.
-    pub fn new() -> BenchmarkModule {
-        BenchmarkModule {}
+    pub fn new() -> ClientModule {
+        ClientModule {}
     }
 }
 
-impl Module for BenchmarkModule {
-    fn init(&mut self, state: &mut ModuleState) {
-        let command = Command::empty(commands::gapi::SET_COLOR_PIPELINE);
-        let commands_bus = &state.commands_bus;
-        commands_bus.push_command(CLIENT_ID, command, Source::GAPI);
-    }
+impl Module for ClientModule {
+    fn init(&mut self, _: &mut ModuleState) {}
 
     fn shutdown(&mut self, _: &mut ModuleState) {}
 
     fn step(&mut self, _: &mut ModuleState) {}
 
-    fn render(&mut self, state: &mut ModuleState) {
-        let commands_bus = &state.commands_bus;
-
-        let points = [
-            Vec2f::new(0.0, 0.0),
-            Vec2f::new(100.0, 0.0),
-            Vec2f::new(100.0, 100.0),
-            Vec2f::new(0.0, 100.0),
-        ];
-
-        let command_payload = BytesBuffer::new(&points);
-        let command = Command::new(commands::gapi::DRAW_PATH, command_payload);
-
-        commands_bus.push_command(CLIENT_ID, command, Source::GAPI);
-    }
+    fn render(&mut self, _: &mut ModuleState) {}
 }
