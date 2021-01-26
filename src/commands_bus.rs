@@ -52,6 +52,9 @@ impl CommandsBus {
                     module_state.gapi_commands_data_allocator.lock(),
                 )
             }
+            Source::Processor => {
+                unimplemented!()
+            }
         };
 
         let commands_allocator = commands_allocator_guard.as_mut().unwrap();

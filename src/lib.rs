@@ -45,7 +45,10 @@ pub fn register_module(module: Box<dyn Module>) {
 }
 
 #[no_mangle]
-pub extern "C" fn tech_paws_vm_process_commands() {}
+pub extern "C" fn tech_paws_vm_process_commands() {
+    let state = unsafe { STATE.as_mut().unwrap() };
+    state.process_commands(Source::Processor);
+}
 
 #[no_mangle]
 pub extern "C" fn tech_paws_vm_process_render_commands() {

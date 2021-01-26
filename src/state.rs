@@ -65,6 +65,7 @@ impl VMState {
 
             match source {
                 Source::GAPI => module.render(&mut state),
+                Source::Processor => module.step(&mut state),
             }
 
             state.clear_commands(source)?;

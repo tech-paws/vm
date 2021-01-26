@@ -66,6 +66,7 @@ impl ModuleState {
     pub fn get_commands(&mut self, source: Source) -> Commands {
         let mut commands_allocator_guard = match source {
             Source::GAPI => self.gapi_commands_allocator.lock(),
+            Source::Processor => unimplemented!(),
         };
 
         let commands_allocator = commands_allocator_guard.as_mut().unwrap();
@@ -83,6 +84,7 @@ impl ModuleState {
                 self.gapi_commands_allocator.try_lock(),
                 self.gapi_commands_data_allocator.try_lock(),
             ),
+            Source::Processor => return Ok(())
         };
 
         let commands_allocator = commands_allocator_guard.as_mut().unwrap();

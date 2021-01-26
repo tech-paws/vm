@@ -8,6 +8,8 @@
 pub enum Source {
     /// GAPI Allocator
     GAPI = 0,
+    /// PROCESSOR
+    Processor = 1,
 }
 
 /// Execute macro.
