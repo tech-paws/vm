@@ -1,5 +1,7 @@
 //! Virtual machine state.
 
+use std::time::Instant;
+
 use crate::module::{Module, ModuleState};
 use crate::{commands::Source, data::Commands, module};
 
@@ -64,7 +66,16 @@ impl VMState {
             let mut state = self.module_states.get_mut(i).unwrap();
 
             match source {
-                Source::GAPI => module.render(&mut state),
+                Source::GAPI => {
+                    if !state.last_time_initialized {
+                        state.last_time = Instant::now();
+                        state.last_time_initialized = true;
+                    }
+
+                    state.delta_time = state.last_time.elapsed().as_secs_f32();
+                    module.render(&mut state);
+                    state.last_time = Instant::now();
+                }
                 Source::Processor => module.step(&mut state),
             }
 

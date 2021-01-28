@@ -1,6 +1,11 @@
 //! Module interface.
 
-use std::{mem, ptr::null, sync::Mutex};
+use std::{
+    mem,
+    ptr::null,
+    sync::Mutex,
+    time::{Duration, Instant},
+};
 
 use crate::{
     allocator::RegionAllocator,
@@ -44,6 +49,13 @@ pub struct ModuleState {
 
     /// Commands bus to communicate with other modules.
     pub commands_bus: CommandsBus,
+
+    ///
+    pub last_time: Instant,
+
+    pub delta_time: f32,
+
+    pub last_time_initialized: bool,
 }
 
 impl Default for ModuleState {
@@ -59,6 +71,9 @@ impl ModuleState {
             gapi_commands_allocator: Mutex::new(RegionAllocator::new(1024)),
             gapi_commands_data_allocator: Mutex::new(RegionAllocator::new(1024)),
             commands_bus: CommandsBus::new(),
+            last_time: Instant::now(),
+            last_time_initialized: false,
+            delta_time: 0.,
         }
     }
 
@@ -84,7 +99,7 @@ impl ModuleState {
                 self.gapi_commands_allocator.try_lock(),
                 self.gapi_commands_data_allocator.try_lock(),
             ),
-            Source::Processor => return Ok(())
+            Source::Processor => return Ok(()),
         };
 
         let commands_allocator = commands_allocator_guard.as_mut().unwrap();
