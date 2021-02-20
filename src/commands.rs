@@ -21,6 +21,9 @@ pub const BEGIN_MACRO: u64 = 0x0001_0002;
 /// End recording macro.
 pub const END_MACRO: u64 = 0x0001_0003;
 
+/// Additional data for the command.
+pub const DATA: u64 = 0x0001_0004;
+
 /// Graphical API commands.
 pub mod gapi {
     /// Command id to draw lines.

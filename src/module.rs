@@ -1,11 +1,6 @@
 //! Module interface.
 
-use std::{
-    mem,
-    ptr::null,
-    sync::Mutex,
-    time::{Duration, Instant},
-};
+use std::{sync::Mutex, time::Instant};
 
 use crate::{
     allocator::RegionAllocator,
@@ -47,6 +42,16 @@ pub struct ModuleState {
     /// Here is a data that holds rendering commands.
     pub gapi_commands_data_allocator: Mutex<RegionAllocator>,
 
+    pub gapi_commands_payload_allocator: Mutex<RegionAllocator>,
+
+    /// Rendering commands.
+    pub processor_commands_allocator: Mutex<RegionAllocator>,
+
+    /// Here is a data that holds rendering commands.
+    pub processor_commands_data_allocator: Mutex<RegionAllocator>,
+
+    pub processor_commands_payload_allocator: Mutex<RegionAllocator>,
+
     /// Commands bus to communicate with other modules.
     pub commands_bus: CommandsBus,
 
@@ -70,10 +75,14 @@ impl ModuleState {
         ModuleState {
             gapi_commands_allocator: Mutex::new(RegionAllocator::new(1024)),
             gapi_commands_data_allocator: Mutex::new(RegionAllocator::new(1024)),
+            gapi_commands_payload_allocator: Mutex::new(RegionAllocator::new(1024)),
+            processor_commands_allocator: Mutex::new(RegionAllocator::new(1024)),
+            processor_commands_data_allocator: Mutex::new(RegionAllocator::new(1024)),
+            processor_commands_payload_allocator: Mutex::new(RegionAllocator::new(1024)),
             commands_bus: CommandsBus::new(),
             last_time: Instant::now(),
-            last_time_initialized: false,
             delta_time: 0.,
+            last_time_initialized: false,
         }
     }
 
@@ -81,7 +90,7 @@ impl ModuleState {
     pub fn get_commands(&mut self, source: Source) -> Commands {
         let mut commands_allocator_guard = match source {
             Source::GAPI => self.gapi_commands_allocator.lock(),
-            Source::Processor => unimplemented!(),
+            Source::Processor => self.processor_commands_allocator.lock(),
         };
 
         let commands_allocator = commands_allocator_guard.as_mut().unwrap();
@@ -94,19 +103,30 @@ impl ModuleState {
 
     /// Clear all commands and ther data from source.
     pub fn clear_commands(&mut self, source: Source) -> Result<(), &'static str> {
-        let (mut commands_allocator_guard, mut commands_data_allocator_guard) = match source {
+        let (
+            mut commands_allocator_guard,
+            mut commands_data_allocator_guard,
+            mut commands_payload_allocator_guard,
+        ) = match source {
             Source::GAPI => (
-                self.gapi_commands_allocator.try_lock(),
-                self.gapi_commands_data_allocator.try_lock(),
+                self.gapi_commands_allocator.lock(),
+                self.gapi_commands_data_allocator.lock(),
+                self.gapi_commands_payload_allocator.lock(),
             ),
-            Source::Processor => return Ok(()),
+            Source::Processor => (
+                self.processor_commands_allocator.lock(),
+                self.processor_commands_data_allocator.lock(),
+                self.processor_commands_payload_allocator.lock(),
+            ),
         };
 
         let commands_allocator = commands_allocator_guard.as_mut().unwrap();
         let commands_data_allocator = commands_data_allocator_guard.as_mut().unwrap();
+        let commands_payload_allocator = commands_payload_allocator_guard.as_mut().unwrap();
 
         commands_allocator.clear()?;
         commands_data_allocator.clear()?;
+        commands_payload_allocator.clear()?;
 
         Ok(())
     }

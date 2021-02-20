@@ -15,25 +15,36 @@ pub struct BytesBuffer {
 /// Virtual machine command.
 #[derive(Debug)]
 #[repr(C)]
-pub struct Command {
+pub struct Command<'a> {
     /// Unique id of the command.
     pub id: u64,
     /// The data that holds the command.
-    pub payload: BytesBuffer,
+    pub payload: &'a [BytesBuffer],
+}
+
+/// Virtual machine command.
+#[derive(Debug)]
+#[repr(C)]
+pub struct CCommand {
+    /// Unique id of the command.
+    pub id: u64,
+    /// Count of payloads.
+    pub count: u64,
+    pub payload: *const BytesBuffer,
 }
 
 /// Commands array.
 #[repr(C)]
-pub struct Commands {
+pub struct Commands<'a> {
     /// Address to commands region
-    pub commands: *const Command,
+    pub commands: *const Command<'a>,
     /// Count of commands.
     pub size: usize,
 }
 
-impl Command {
+impl<'a> Command<'a> {
     /// Create a new command with a given payload.
-    pub fn new(id: u64, payload: BytesBuffer) -> Self {
+    pub fn new(id: u64, payload: &'a [BytesBuffer]) -> Self {
         Command { id, payload }
     }
 
@@ -41,12 +52,12 @@ impl Command {
     pub fn empty(id: u64) -> Self {
         Command {
             id,
-            payload: BytesBuffer::empty(),
+            payload: &[],
         }
     }
 }
 
-impl Commands {
+impl<'a> Commands<'a> {
     /// Create a commands instance without commands.
     pub fn empty() -> Self {
         Commands {
@@ -97,16 +108,28 @@ impl BytesBuffer {
         }
     }
 
+    pub fn from_str(text: &str) -> Self {
+        BytesBuffer {
+            size: text.len() as u64,
+            base: text.as_ptr(),
+        }
+    }
+
+    pub fn from_string(text: &String) -> Self {
+        BytesBuffer {
+            size: text.len() as u64,
+            base: text.as_ptr(),
+        }
+    }
+
     /// Create a new payload with a given array.
     // pub fn new_command_payload(_values: &[CommandPayloadItem]) -> Self {
-        // todo!()
+    // todo!()
     // }
 
     /// Create empty payload without any data.
-    pub fn empty() -> Self {
-        BytesBuffer {
-            size: 0,
-            base: null::<u8>(),
-        }
-    }
+    pub const EMPTY: BytesBuffer = BytesBuffer {
+        size: 0,
+        base: null::<u8>(),
+    };
 }

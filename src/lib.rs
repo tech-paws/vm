@@ -57,13 +57,13 @@ pub extern "C" fn tech_paws_vm_process_render_commands() {
 }
 
 #[no_mangle]
-pub extern "C" fn tech_paws_vm_get_gapi_commands() -> Commands {
+pub extern "C" fn tech_paws_vm_get_gapi_commands<'a>() -> Commands<'a> {
     let state = unsafe { STATE.as_mut().unwrap() };
     state.get_commands(Source::GAPI)
 }
 
 #[no_mangle]
-pub extern "C" fn tech_paws_vm_get_commands() -> Commands {
+pub extern "C" fn tech_paws_vm_get_commands<'a>() -> Commands<'a> {
     Commands::empty()
 }
 
