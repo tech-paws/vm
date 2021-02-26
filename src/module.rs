@@ -11,16 +11,12 @@ use crate::{
 
 // TODO(sysint64): Make it dynamic
 /// Debug services module id.
-pub const CLIENT_ID: usize = 0;
-
-/// Benchmark module id.
-pub const BENCHMARK_ID: usize = 1;
-
-/// Debug services module id.
-pub const DEBUG_ID: usize = 2;
+pub const CLIENT_ID: &'static str = "tech.paws.client";
 
 /// Module interface.
 pub trait Module {
+    fn id(&self) -> &'static str;
+
     /// Initialize module, e.g. run process or server
     fn init(&mut self, state: &mut ModuleState);
 
@@ -149,6 +145,10 @@ impl ClientModule {
 }
 
 impl Module for ClientModule {
+    fn id(&self) -> &'static str {
+        CLIENT_ID
+    }
+
     fn init(&mut self, _: &mut ModuleState) {}
 
     fn shutdown(&mut self, _: &mut ModuleState) {}

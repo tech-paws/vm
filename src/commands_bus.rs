@@ -44,10 +44,10 @@ impl CommandsBus {
     /// let commands_bus = CommandsBus::new();
     /// commands_bus.push_command(module::CLIENT_ID, command, commands::Source::GAPI);
     /// ```
-    pub fn push_command(&self, address: usize, command: Command, source: Source) {
+    pub fn push_command(&self, address: &'static str, command: Command, source: Source) {
         // TODO(sysint64): handle unwraps.
         let state = unsafe { STATE.as_ref() }.unwrap();
-        let module_state = state.module_states.get(address).unwrap();
+        let module_state = state.module_states.get(&address).unwrap();
 
         let (
             mut commands_allocator_guard,

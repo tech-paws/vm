@@ -1,6 +1,6 @@
 //! Virtual machine state.
 
-use std::time::Instant;
+use std::{collections::HashMap, time::Instant};
 
 use crate::module::{Module, ModuleState};
 use crate::{commands::Source, data::Commands, module};
@@ -11,7 +11,7 @@ pub struct VMState {
     pub modules: Vec<Box<dyn Module>>,
 
     /// Module states.
-    pub module_states: Vec<ModuleState>,
+    pub module_states: HashMap<&'static str, ModuleState>,
 }
 
 impl Default for VMState {
@@ -25,7 +25,7 @@ impl VMState {
     pub fn new() -> Self {
         VMState {
             modules: Vec::new(),
-            module_states: Vec::new(),
+            module_states: HashMap::new(),
         }
     }
 
@@ -33,8 +33,8 @@ impl VMState {
     pub fn register_module(&mut self, module: Box<dyn Module>) {
         assert!(self.modules.len() == self.module_states.len());
 
+        self.module_states.insert(module.id(), ModuleState::new());
         self.modules.push(module);
-        self.module_states.push(ModuleState::new());
     }
 
     ///
@@ -46,14 +46,14 @@ impl VMState {
     /// Get commands from the root module.
     pub fn get_commands(&mut self, source: Source) -> Commands {
         // TODO(sysint64): handle unwraps.
-        let client_module_state = self.module_states.get_mut(module::CLIENT_ID).unwrap();
+        let client_module_state = self.module_states.get_mut(&module::CLIENT_ID).unwrap();
         client_module_state.get_commands(source)
     }
 
     /// Clear all commands from the root module.
     pub fn clear_commands(&mut self, source: Source) -> Result<(), &'static str> {
         // TODO(sysint64): handle unwraps.
-        let client_module_state = self.module_states.get_mut(module::CLIENT_ID).unwrap();
+        let client_module_state = self.module_states.get_mut(&module::CLIENT_ID).unwrap();
         client_module_state.clear_commands(source)
     }
 
@@ -62,8 +62,8 @@ impl VMState {
     pub fn process_commands(&mut self, source: Source) -> Result<(), &'static str> {
         assert!(self.modules.len() == self.module_states.len());
 
-        for (i, module) in self.modules.iter_mut().enumerate() {
-            let mut state = self.module_states.get_mut(i).unwrap();
+        for module in self.modules.iter_mut() {
+            let mut state = self.module_states.get_mut(&module.id()).unwrap();
 
             match source {
                 Source::GAPI => {
