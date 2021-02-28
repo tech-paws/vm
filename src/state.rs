@@ -2,7 +2,11 @@
 
 use std::{collections::HashMap, time::Instant};
 
-use crate::{commands::Source, data::Commands, module::{self, CLIENT_ID}};
+use crate::{
+    commands::Source,
+    data::Commands,
+    module::{self, CLIENT_ID},
+};
 use crate::{
     commands_bus::CommandsBus,
     module::{Module, ModuleState},
@@ -82,8 +86,12 @@ impl VMState {
                     state.delta_time = state.last_time.elapsed().as_secs_f32();
                     module.render(&mut state);
                     state.last_time = Instant::now();
+                    state.clear_commands(Source::GAPI)?;
                 }
-                Source::Processor => module.step(&mut state),
+                Source::Processor => {
+                    module.step(&mut state);
+                    state.clear_commands(Source::Processor)?;
+                }
             }
         }
 
@@ -95,8 +103,6 @@ impl VMState {
 
         for module in self.modules.iter() {
             let state = self.module_states.get_mut(&module.id()).unwrap();
-            state.clear_commands(Source::GAPI)?;
-            state.clear_commands(Source::Processor)?;
             state.clear_text_boundaries()?;
         }
 

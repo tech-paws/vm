@@ -106,12 +106,55 @@ impl CommandsBus {
 
         let module_state = state.module_states.get(&address).unwrap();
 
-        let mut commands_allocator_guard = match source {
-            Source::GAPI => module_state.gapi_commands_allocator.lock(),
-            Source::Processor => unimplemented!(),
+        // let mut commands_allocator_guard = match source {
+        //     Source::GAPI => module_state.gapi_commands_allocator.lock(),
+        //     Source::Processor => module_state.processor_commands_allocator.lock(),
+        // };
+
+        // let commands_allocator = commands_allocator_guard.as_mut().unwrap();
+        let (
+            mut commands_allocator_guard,
+            mut commands_data_allocator_guard,
+            mut commands_payload_allocator_guard,
+        ) = match source {
+            Source::GAPI => (
+                module_state.gapi_commands_allocator.lock(),
+                module_state.gapi_commands_data_allocator.lock(),
+                module_state.gapi_commands_payload_allocator.lock(),
+            ),
+            Source::Processor => (
+                module_state.processor_commands_allocator.lock(),
+                module_state.processor_commands_data_allocator.lock(),
+                module_state.processor_commands_payload_allocator.lock(),
+            ),
         };
 
         let commands_allocator = commands_allocator_guard.as_mut().unwrap();
+        let commands_data_allocator = commands_data_allocator_guard.as_mut().unwrap();
+        let commands_payload_allocator = commands_payload_allocator_guard.as_mut().unwrap();
+
+        let data = unsafe {
+            commands_data_allocator
+                .emplace_buffer((*command.payload).base, (*command.payload).size)
+                .unwrap()
+        };
+
+        let command_payload = BytesBuffer {
+            base: data,
+            size: unsafe { (*command.payload).size },
+        };
+
+        let payload_base = commands_payload_allocator
+            .emplace_struct(&command_payload)
+            .unwrap();
+
+        let command = CCommand {
+            id: command.id,
+            count: 1,
+            from: command.from,
+            payload: payload_base,
+        };
+
         commands_allocator.emplace_struct(&command).unwrap();
     }
 }

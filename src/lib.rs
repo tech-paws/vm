@@ -11,13 +11,13 @@ pub mod gapi;
 pub mod module;
 pub mod state;
 
-use std::{ffi::CStr, mem, os::raw::c_char};
+use std::{ffi::CStr, os::raw::c_char};
 
 use commands::Source;
 use log;
 
 use crate::module::Module;
-use data::{BytesBuffer, CCommand, Command, Commands};
+use data::{BytesBuffer, CCommand, Commands};
 use state::VMState;
 
 static mut STATE: Option<VMState> = None;
@@ -63,18 +63,20 @@ pub extern "C" fn tech_paws_vm_flush() {
 }
 
 #[no_mangle]
-pub extern "C" fn tech_paws_vm_get_gapi_commands<'a>() -> Commands<'a> {
+pub extern "C" fn tech_paws_vm_get_gapi_commands() -> Commands {
     let state = unsafe { STATE.as_mut().unwrap() };
     state.get_commands(Source::GAPI)
 }
 
 #[no_mangle]
-pub extern "C" fn tech_paws_vm_get_commands<'a>() -> Commands<'a> {
+pub extern "C" fn tech_paws_vm_get_commands() -> Commands {
     Commands::empty()
 }
 
 #[no_mangle]
-pub extern "C" fn tech_paws_vm_gapi_flush() {}
+pub extern "C" fn tech_paws_vm_gapi_flush() {
+
+}
 
 #[no_mangle]
 pub unsafe extern "C" fn tech_paws_push_command(address: *const c_char, command: CCommand, source: Source) {

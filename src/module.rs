@@ -1,12 +1,12 @@
 //! Module interface.
 
-use std::{sync::Mutex, time::Instant};
+use std::{marker::PhantomData, mem, sync::Mutex, time::Instant};
 
 use crate::{
     allocator::RegionAllocator,
     commands::Source,
     commands_bus::CommandsBus,
-    data::{Command, Commands},
+    data::{BytesBuffer, CCommand, Command, Commands},
 };
 
 // TODO(sysint64): Make it dynamic
@@ -80,6 +80,7 @@ impl ModuleState {
     }
 
     /// Get commands from source.
+    /// TODO(sysint64): Use custom allocator instead of Vec.
     pub fn get_commands(&mut self, source: Source) -> Commands {
         let mut commands_allocator_guard = match source {
             Source::GAPI => self.gapi_commands_allocator.lock(),
@@ -90,7 +91,7 @@ impl ModuleState {
 
         Commands {
             size: commands_allocator.region.offset as usize,
-            commands: commands_allocator.region.base as *mut Command,
+            commands: commands_allocator.region.base as *mut CCommand,
         }
     }
 
@@ -125,7 +126,11 @@ impl ModuleState {
     }
 
     pub fn clear_text_boundaries(&mut self) -> Result<(), &'static str> {
-        self.text_boundaries_allocator.lock().as_mut().unwrap().clear()
+        self.text_boundaries_allocator
+            .lock()
+            .as_mut()
+            .unwrap()
+            .clear()
     }
 }
 

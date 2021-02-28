@@ -3,7 +3,7 @@
 use std::{mem, ops, ptr::null};
 
 /// Virtual machine command payload.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[repr(C)]
 pub struct BytesBuffer {
     /// Size of the data.
@@ -36,9 +36,9 @@ pub struct CCommand {
 
 /// Commands array.
 #[repr(C)]
-pub struct Commands<'a> {
+pub struct Commands {
     /// Address to commands region
-    pub commands: *const Command<'a>,
+    pub commands: *const CCommand,
     /// Count of commands.
     pub size: usize,
 }
@@ -58,12 +58,12 @@ impl<'a> Command<'a> {
     }
 }
 
-impl<'a> Commands<'a> {
+impl Commands {
     /// Create a commands instance without commands.
     pub fn empty() -> Self {
         Commands {
             size: 0,
-            commands: null::<Command>(),
+            commands: null::<CCommand>(),
         }
     }
 }
