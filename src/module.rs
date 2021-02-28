@@ -32,6 +32,8 @@ pub trait Module {
 
 /// Module state.
 pub struct ModuleState {
+    pub text_boundaries_allocator: Mutex<RegionAllocator>,
+
     /// Rendering commands.
     pub gapi_commands_allocator: Mutex<RegionAllocator>,
 
@@ -59,23 +61,18 @@ pub struct ModuleState {
     pub last_time_initialized: bool,
 }
 
-impl Default for ModuleState {
-    fn default() -> Self {
-        ModuleState::new()
-    }
-}
-
 impl ModuleState {
     /// Create a new module state.
-    pub fn new() -> Self {
+    pub fn new(module_id: &'static str) -> Self {
         ModuleState {
-            gapi_commands_allocator: Mutex::new(RegionAllocator::new(1024)),
-            gapi_commands_data_allocator: Mutex::new(RegionAllocator::new(1024)),
-            gapi_commands_payload_allocator: Mutex::new(RegionAllocator::new(1024)),
-            processor_commands_allocator: Mutex::new(RegionAllocator::new(1024)),
-            processor_commands_data_allocator: Mutex::new(RegionAllocator::new(1024)),
-            processor_commands_payload_allocator: Mutex::new(RegionAllocator::new(1024)),
-            commands_bus: CommandsBus::new(),
+            text_boundaries_allocator: Mutex::new(RegionAllocator::new(1024 * 1024)),
+            gapi_commands_allocator: Mutex::new(RegionAllocator::new(1024 * 1024)),
+            gapi_commands_data_allocator: Mutex::new(RegionAllocator::new(1024 * 1024)),
+            gapi_commands_payload_allocator: Mutex::new(RegionAllocator::new(1024 * 1024)),
+            processor_commands_allocator: Mutex::new(RegionAllocator::new(1024 * 1024)),
+            processor_commands_data_allocator: Mutex::new(RegionAllocator::new(1024 * 1024)),
+            processor_commands_payload_allocator: Mutex::new(RegionAllocator::new(1024 * 1024)),
+            commands_bus: CommandsBus::new(module_id),
             last_time: Instant::now(),
             delta_time: 0.,
             last_time_initialized: false,
@@ -125,6 +122,10 @@ impl ModuleState {
         commands_payload_allocator.clear()?;
 
         Ok(())
+    }
+
+    pub fn clear_text_boundaries(&mut self) -> Result<(), &'static str> {
+        self.text_boundaries_allocator.lock().as_mut().unwrap().clear()
     }
 }
 

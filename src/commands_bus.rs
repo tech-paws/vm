@@ -1,6 +1,6 @@
 //! Commands Bus
 
-use std::{mem, ptr::null};
+use std::{ffi::CStr, os::raw::c_char, ptr::null};
 
 use crate::{
     commands::Source,
@@ -9,18 +9,14 @@ use crate::{
 };
 
 /// Commands bus. Used to communicate between modules.
-pub struct CommandsBus {}
-
-impl Default for CommandsBus {
-    fn default() -> Self {
-        CommandsBus::new()
-    }
+pub struct CommandsBus {
+    module_id: &'static str,
 }
 
 impl CommandsBus {
     /// Create a new commands bus.
-    pub fn new() -> Self {
-        CommandsBus {}
+    pub fn new(module_id: &'static str) -> Self {
+        CommandsBus { module_id }
     }
 
     /// Push command to module by address using the allocator `source` to
@@ -89,11 +85,33 @@ impl CommandsBus {
             }
         }
 
+        let from_address = BytesBuffer {
+            base: self.module_id.as_ptr(),
+            size: self.module_id.len() as u64,
+        };
+
         let command = CCommand {
             id: command.id,
             count: command.payload.len() as u64,
+            from: from_address,
             payload: payload_base,
         };
+        commands_allocator.emplace_struct(&command).unwrap();
+    }
+
+    pub fn c_push_command(&self, address: *const c_char, command: CCommand, source: Source) {
+        // TODO(sysint64): handle unwraps.
+        let state = unsafe { STATE.as_ref() }.unwrap();
+        let address: &str = unsafe { CStr::from_ptr(address) }.to_str().unwrap();
+
+        let module_state = state.module_states.get(&address).unwrap();
+
+        let mut commands_allocator_guard = match source {
+            Source::GAPI => module_state.gapi_commands_allocator.lock(),
+            Source::Processor => unimplemented!(),
+        };
+
+        let commands_allocator = commands_allocator_guard.as_mut().unwrap();
         commands_allocator.emplace_struct(&command).unwrap();
     }
 }

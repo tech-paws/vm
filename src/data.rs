@@ -30,6 +30,7 @@ pub struct CCommand {
     pub id: u64,
     /// Count of payloads.
     pub count: u64,
+    pub from: BytesBuffer,
     pub payload: *const BytesBuffer,
 }
 

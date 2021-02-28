@@ -17,7 +17,7 @@ use commands::Source;
 use log;
 
 use crate::module::Module;
-use data::{Command, Commands};
+use data::{BytesBuffer, CCommand, Command, Commands};
 use state::VMState;
 
 static mut STATE: Option<VMState> = None;
@@ -57,6 +57,12 @@ pub extern "C" fn tech_paws_vm_process_render_commands() {
 }
 
 #[no_mangle]
+pub extern "C" fn tech_paws_vm_flush() {
+    let state = unsafe { STATE.as_mut().unwrap() };
+    state.flush();
+}
+
+#[no_mangle]
 pub extern "C" fn tech_paws_vm_get_gapi_commands<'a>() -> Commands<'a> {
     let state = unsafe { STATE.as_mut().unwrap() };
     state.get_commands(Source::GAPI)
@@ -71,7 +77,21 @@ pub extern "C" fn tech_paws_vm_get_commands<'a>() -> Commands<'a> {
 pub extern "C" fn tech_paws_vm_gapi_flush() {}
 
 #[no_mangle]
-pub extern "C" fn tech_paws_vm_flush() {}
+pub unsafe extern "C" fn tech_paws_push_command(address: *const c_char, command: CCommand, source: Source) {
+    let state = unsafe { STATE.as_mut().unwrap() };
+    state.client_command_bus.c_push_command(address, command, source);
+}
+
+#[no_mangle]
+pub extern "C" fn tech_paws_vm_client_id() -> BytesBuffer {
+    BytesBuffer {
+        base: module::CLIENT_ID.as_ptr(),
+        size: module::CLIENT_ID.len() as u64,
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn tech_paws_vm_process_flush() {}
 
 #[no_mangle]
 pub unsafe extern "C" fn tech_paws_vm_log_trace(message: *const c_char) {

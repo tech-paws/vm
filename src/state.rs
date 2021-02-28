@@ -2,11 +2,16 @@
 
 use std::{collections::HashMap, time::Instant};
 
-use crate::module::{Module, ModuleState};
-use crate::{commands::Source, data::Commands, module};
+use crate::{commands::Source, data::Commands, module::{self, CLIENT_ID}};
+use crate::{
+    commands_bus::CommandsBus,
+    module::{Module, ModuleState},
+};
 
 /// State structure.
 pub struct VMState {
+    pub client_command_bus: CommandsBus,
+
     /// Connected modules.
     pub modules: Vec<Box<dyn Module>>,
 
@@ -24,6 +29,7 @@ impl VMState {
     /// Create a new state.
     pub fn new() -> Self {
         VMState {
+            client_command_bus: CommandsBus::new(CLIENT_ID),
             modules: Vec::new(),
             module_states: HashMap::new(),
         }
@@ -33,7 +39,8 @@ impl VMState {
     pub fn register_module(&mut self, module: Box<dyn Module>) {
         assert!(self.modules.len() == self.module_states.len());
 
-        self.module_states.insert(module.id(), ModuleState::new());
+        self.module_states
+            .insert(module.id(), ModuleState::new(module.id()));
         self.modules.push(module);
     }
 
@@ -50,12 +57,12 @@ impl VMState {
         client_module_state.get_commands(source)
     }
 
-    /// Clear all commands from the root module.
-    pub fn clear_commands(&mut self, source: Source) -> Result<(), &'static str> {
-        // TODO(sysint64): handle unwraps.
-        let client_module_state = self.module_states.get_mut(&module::CLIENT_ID).unwrap();
-        client_module_state.clear_commands(source)
-    }
+    // /// Clear all commands from the root module.
+    // pub fn clear_commands(&mut self, source: Source) -> Result<(), &'static str> {
+    //     // TODO(sysint64): handle unwraps.
+    //     let client_module_state = self.module_states.get_mut(&module::CLIENT_ID).unwrap();
+    //     client_module_state.clear_commands(source)
+    // }
 
     /// Process all commands for all modules from source.
     /// This method will clear all commands from source for module.
@@ -78,8 +85,19 @@ impl VMState {
                 }
                 Source::Processor => module.step(&mut state),
             }
+        }
 
-            state.clear_commands(source)?;
+        Ok(())
+    }
+
+    pub fn flush(&mut self) -> Result<(), &'static str> {
+        assert!(self.modules.len() == self.module_states.len());
+
+        for module in self.modules.iter() {
+            let state = self.module_states.get_mut(&module.id()).unwrap();
+            state.clear_commands(Source::GAPI)?;
+            state.clear_commands(Source::Processor)?;
+            state.clear_text_boundaries()?;
         }
 
         Ok(())
