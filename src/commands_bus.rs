@@ -16,6 +16,7 @@ impl CommandsBus {
     }
 
     pub fn push_command_new<C: CommandNew<T>, T>(&self, address: &'static str, command: C) {
+        todo!()
     }
 
     /// Push command to module by address using the allocator `source` to

@@ -4,10 +4,10 @@ use vm_buffers::{BytesReader, BytesWriter, IntoVMBuffers};
 use vm_math::Mat4f;
 
 pub struct TextData {
-    font_id: u64,
-    font_size: u32,
-    mvp_matrix: Mat4f,
-    text: String,
+    pub font_id: u64,
+    pub font_size: u32,
+    pub mvp_matrix: Mat4f,
+    pub text: String,
 }
 
 impl IntoVMBuffers for TextData {
