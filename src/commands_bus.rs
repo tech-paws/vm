@@ -2,11 +2,7 @@
 
 use std::{ffi::CStr, os::raw::c_char, ptr::null};
 
-use crate::{
-    commands::Source,
-    data::{BytesBuffer, CCommand, Command},
-    STATE,
-};
+use crate::{STATE, commands::{CommandNew, Source}, data::{BytesBuffer, CCommand, Command}};
 
 /// Commands bus. Used to communicate between modules.
 pub struct CommandsBus {
@@ -17,6 +13,9 @@ impl CommandsBus {
     /// Create a new commands bus.
     pub fn new(module_id: &'static str) -> Self {
         CommandsBus { module_id }
+    }
+
+    pub fn push_command_new<C: CommandNew<T>, T>(&self, command: C) {
     }
 
     /// Push command to module by address using the allocator `source` to
