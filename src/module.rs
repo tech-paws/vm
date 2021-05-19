@@ -2,6 +2,7 @@
 
 use std::{marker::PhantomData, mem, sync::Mutex, time::Instant};
 
+use vm_buffers::{ByteOrder, BytesReader, BytesWriter};
 use vm_memory::RegionAllocator;
 
 use crate::{
@@ -41,6 +42,10 @@ pub struct ModuleState {
     /// Here is a data that holds rendering commands.
     pub gapi_commands_allocator_new: Mutex<RegionAllocator>,
 
+    pub gapi_bytes_writer: Mutex<BytesWriter>,
+
+    pub gapi_bytes_reader: Mutex<BytesReader>,
+
     /// Here is a data that holds rendering commands.
     pub gapi_commands_data_allocator: Mutex<RegionAllocator>,
 
@@ -68,10 +73,18 @@ pub struct ModuleState {
 impl ModuleState {
     /// Create a new module state.
     pub fn new(module_id: &'static str) -> Self {
+        let gapi_commands_allocator_new = RegionAllocator::new(1024 * 1024);
+        let gapi_bytes_writer =
+            BytesWriter::new(ByteOrder::LittleEndian, &gapi_commands_allocator_new);
+        let gapi_bytes_reader =
+            BytesReader::new(ByteOrder::LittleEndian, &gapi_commands_allocator_new);
+
         ModuleState {
             text_boundaries_allocator: Mutex::new(RegionAllocator::new(1024 * 1024)),
             gapi_commands_allocator: Mutex::new(RegionAllocator::new(1024 * 1024)),
-            gapi_commands_allocator_new: Mutex::new(RegionAllocator::new(1024 * 1024)),
+            gapi_bytes_writer: Mutex::new(gapi_bytes_writer),
+            gapi_bytes_reader: Mutex::new(gapi_bytes_reader),
+            gapi_commands_allocator_new: Mutex::new(gapi_commands_allocator_new),
             gapi_commands_data_allocator: Mutex::new(RegionAllocator::new(1024 * 1024)),
             gapi_commands_payload_allocator: Mutex::new(RegionAllocator::new(1024 * 1024)),
             processor_commands_allocator: Mutex::new(RegionAllocator::new(1024 * 1024)),
@@ -104,28 +117,42 @@ impl ModuleState {
     pub fn clear_commands(&mut self, source: Source) -> Result<(), &'static str> {
         let (
             mut commands_allocator_guard,
+            mut commands_bytes_writer_guard,
+            mut commands_bytes_reader_guard,
             mut commands_data_allocator_guard,
             mut commands_payload_allocator_guard,
         ) = match source {
-            Source::GAPI => (
-                self.gapi_commands_allocator.lock(),
-                self.gapi_commands_data_allocator.lock(),
-                self.gapi_commands_payload_allocator.lock(),
-            ),
-            Source::Processor => (
-                self.processor_commands_allocator.lock(),
-                self.processor_commands_data_allocator.lock(),
-                self.processor_commands_payload_allocator.lock(),
-            ),
+            Source::GAPI => {
+                (
+                    self.gapi_commands_allocator.lock(),
+                    self.gapi_bytes_writer.lock(),
+                    self.gapi_bytes_reader.lock(),
+                    self.gapi_commands_data_allocator.lock(),
+                    self.gapi_commands_payload_allocator.lock(),
+                )
+            }
+            Source::Processor => {
+                (
+                    self.processor_commands_allocator.lock(),
+                    self.gapi_bytes_writer.lock(),
+                    self.gapi_bytes_reader.lock(),
+                    self.processor_commands_data_allocator.lock(),
+                    self.processor_commands_payload_allocator.lock(),
+                )
+            }
         };
 
         let commands_allocator = commands_allocator_guard.as_mut().unwrap();
+        let commands_bytes_writer = commands_bytes_writer_guard.as_mut().unwrap();
+        let commands_bytes_reader = commands_bytes_reader_guard.as_mut().unwrap();
         let commands_data_allocator = commands_data_allocator_guard.as_mut().unwrap();
         let commands_payload_allocator = commands_payload_allocator_guard.as_mut().unwrap();
 
         commands_allocator.clear()?;
         commands_data_allocator.clear()?;
         commands_payload_allocator.clear()?;
+        commands_bytes_writer.clear();
+        commands_bytes_reader.reset();
 
         Ok(())
     }

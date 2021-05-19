@@ -2,7 +2,13 @@
 
 use std::{ffi::CStr, os::raw::c_char, ptr::null};
 
-use crate::{STATE, commands::{CommandNew, Source}, data::{BytesBuffer, CCommand, Command}};
+use vm_buffers::BytesWriter;
+
+use crate::{
+    commands::Source,
+    data::{BytesBuffer, CCommand, Command},
+    STATE,
+};
 
 /// Commands bus. Used to communicate between modules.
 pub struct CommandsBus {
@@ -15,8 +21,40 @@ impl CommandsBus {
         CommandsBus { module_id }
     }
 
-    pub fn push_command_new<C: CommandNew<T>, T>(&self, address: &'static str, command: C) {
-        todo!()
+    pub fn push_command_new<F>(
+        &self,
+        address: &'static str,
+        id: u64,
+        source: Source,
+        command_writer: F,
+    ) where
+        F: FnOnce(&mut BytesWriter),
+    {
+        let state = unsafe { STATE.as_ref() }.unwrap();
+        let module_state = state.module_states.get(&address).unwrap();
+
+        let mut bytes_writer_guard = match source {
+            Source::GAPI => module_state.gapi_bytes_writer.lock(),
+            Source::Processor => {
+                todo!();
+            }
+        };
+
+        let bytes_writer = bytes_writer_guard.as_mut().unwrap();
+
+        bytes_writer.write_u64(id);
+
+        // Write size of payload in bytes
+        let payload_size_offset = bytes_writer.current_offset();
+        // Leave gap for the future, because we don't know the actual size of payload yet.
+        bytes_writer.write_u64(0);
+
+        let start_offset = bytes_writer.current_offset();
+        command_writer(bytes_writer);
+        let end_offset = bytes_writer.current_offset();
+
+        // Write size of payload at size_offset
+        bytes_writer.write_u64_at(payload_size_offset, end_offset - start_offset);
     }
 
     /// Push command to module by address using the allocator `source` to
@@ -27,12 +65,12 @@ impl CommandsBus {
     /// ```rust
     /// # use assert_approx_eq::assert_approx_eq;
     /// use std::mem;
-    /// use vm_memory::*;
     /// use vm::commands;
     /// use vm::commands_bus::*;
     /// use vm::data::*;
     /// use vm::module;
     /// use vm::*;
+    /// use vm_memory::*;
     ///
     /// unsafe { vm::init() };
     /// let payload = unsafe { BytesBuffer::new(&[12, 34, 55]) };
@@ -50,11 +88,13 @@ impl CommandsBus {
             mut commands_data_allocator_guard,
             mut commands_payload_allocator_guard,
         ) = match source {
-            Source::GAPI => (
-                module_state.gapi_commands_allocator.lock(),
-                module_state.gapi_commands_data_allocator.lock(),
-                module_state.gapi_commands_payload_allocator.lock(),
-            ),
+            Source::GAPI => {
+                (
+                    module_state.gapi_commands_allocator.lock(),
+                    module_state.gapi_commands_data_allocator.lock(),
+                    module_state.gapi_commands_payload_allocator.lock(),
+                )
+            }
             Source::Processor => unimplemented!(),
         };
 
@@ -117,16 +157,20 @@ impl CommandsBus {
             mut commands_data_allocator_guard,
             mut commands_payload_allocator_guard,
         ) = match source {
-            Source::GAPI => (
-                module_state.gapi_commands_allocator.lock(),
-                module_state.gapi_commands_data_allocator.lock(),
-                module_state.gapi_commands_payload_allocator.lock(),
-            ),
-            Source::Processor => (
-                module_state.processor_commands_allocator.lock(),
-                module_state.processor_commands_data_allocator.lock(),
-                module_state.processor_commands_payload_allocator.lock(),
-            ),
+            Source::GAPI => {
+                (
+                    module_state.gapi_commands_allocator.lock(),
+                    module_state.gapi_commands_data_allocator.lock(),
+                    module_state.gapi_commands_payload_allocator.lock(),
+                )
+            }
+            Source::Processor => {
+                (
+                    module_state.processor_commands_allocator.lock(),
+                    module_state.processor_commands_data_allocator.lock(),
+                    module_state.processor_commands_payload_allocator.lock(),
+                )
+            }
         };
 
         let commands_allocator = commands_allocator_guard.as_mut().unwrap();
