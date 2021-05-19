@@ -39,6 +39,9 @@ pub struct ModuleState {
     pub gapi_commands_allocator: Mutex<RegionAllocator>,
 
     /// Here is a data that holds rendering commands.
+    pub gapi_commands_allocator_new: Mutex<RegionAllocator>,
+
+    /// Here is a data that holds rendering commands.
     pub gapi_commands_data_allocator: Mutex<RegionAllocator>,
 
     pub gapi_commands_payload_allocator: Mutex<RegionAllocator>,
@@ -68,6 +71,7 @@ impl ModuleState {
         ModuleState {
             text_boundaries_allocator: Mutex::new(RegionAllocator::new(1024 * 1024)),
             gapi_commands_allocator: Mutex::new(RegionAllocator::new(1024 * 1024)),
+            gapi_commands_allocator_new: Mutex::new(RegionAllocator::new(1024 * 1024)),
             gapi_commands_data_allocator: Mutex::new(RegionAllocator::new(1024 * 1024)),
             gapi_commands_payload_allocator: Mutex::new(RegionAllocator::new(1024 * 1024)),
             processor_commands_allocator: Mutex::new(RegionAllocator::new(1024 * 1024)),
