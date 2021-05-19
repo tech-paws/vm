@@ -2,8 +2,9 @@
 
 use std::{marker::PhantomData, mem, sync::Mutex, time::Instant};
 
+use vm_memory::RegionAllocator;
+
 use crate::{
-    allocator::RegionAllocator,
     commands::Source,
     commands_bus::CommandsBus,
     data::{BytesBuffer, CCommand, Command, Commands},

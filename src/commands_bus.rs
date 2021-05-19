@@ -27,7 +27,7 @@ impl CommandsBus {
     /// ```rust
     /// # use assert_approx_eq::assert_approx_eq;
     /// use std::mem;
-    /// use vm::allocator::*;
+    /// use vm_memory::*;
     /// use vm::commands;
     /// use vm::commands_bus::*;
     /// use vm::data::*;
@@ -99,10 +99,10 @@ impl CommandsBus {
         commands_allocator.emplace_struct(&command).unwrap();
     }
 
-    pub fn c_push_command(&self, address: *const c_char, command: CCommand, source: Source) {
+    pub unsafe fn c_push_command(&self, address: *const c_char, command: CCommand, source: Source) {
         // TODO(sysint64): handle unwraps.
-        let state = unsafe { STATE.as_ref() }.unwrap();
-        let address: &str = unsafe { CStr::from_ptr(address) }.to_str().unwrap();
+        let state = STATE.as_ref().unwrap();
+        let address: &str = CStr::from_ptr(address).to_str().unwrap();
 
         let module_state = state.module_states.get(&address).unwrap();
 

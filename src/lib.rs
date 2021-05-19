@@ -2,8 +2,6 @@
 
 //! Virtual machine memory management.
 
-pub mod allocator;
-pub mod c_api;
 pub mod commands;
 pub mod commands_bus;
 pub mod data;
