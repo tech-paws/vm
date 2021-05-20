@@ -3,7 +3,7 @@
 use std::{marker::PhantomData, mem, sync::Mutex, time::Instant};
 
 use vm_buffers::{ByteOrder, BytesReader, BytesWriter};
-use vm_memory::RegionAllocator;
+use vm_memory::{BufferAccessor, RegionAllocator};
 
 use crate::{
     commands::Source,
@@ -73,11 +73,14 @@ pub struct ModuleState {
 impl ModuleState {
     /// Create a new module state.
     pub fn new(module_id: &'static str) -> Self {
-        let gapi_commands_allocator_new = RegionAllocator::new(1024 * 1024);
-        let gapi_bytes_writer =
+        let gapi_commands_allocator_new = RegionAllocator::new(1024);
+        let mut gapi_bytes_writer =
             BytesWriter::new(ByteOrder::LittleEndian, &gapi_commands_allocator_new);
         let gapi_bytes_reader =
             BytesReader::new(ByteOrder::LittleEndian, &gapi_commands_allocator_new);
+
+        // Write current commands count
+        gapi_bytes_writer.write_u64(0);
 
         ModuleState {
             text_boundaries_allocator: Mutex::new(RegionAllocator::new(1024 * 1024)),
@@ -117,6 +120,7 @@ impl ModuleState {
     pub fn clear_commands(&mut self, source: Source) -> Result<(), &'static str> {
         let (
             mut commands_allocator_guard,
+            mut commands_allocator_new_guard,
             mut commands_bytes_writer_guard,
             mut commands_bytes_reader_guard,
             mut commands_data_allocator_guard,
@@ -125,6 +129,7 @@ impl ModuleState {
             Source::GAPI => {
                 (
                     self.gapi_commands_allocator.lock(),
+                    self.gapi_commands_allocator_new.lock(),
                     self.gapi_bytes_writer.lock(),
                     self.gapi_bytes_reader.lock(),
                     self.gapi_commands_data_allocator.lock(),
@@ -134,6 +139,7 @@ impl ModuleState {
             Source::Processor => {
                 (
                     self.processor_commands_allocator.lock(),
+                    self.gapi_commands_allocator_new.lock(),
                     self.gapi_bytes_writer.lock(),
                     self.gapi_bytes_reader.lock(),
                     self.processor_commands_data_allocator.lock(),
@@ -143,16 +149,31 @@ impl ModuleState {
         };
 
         let commands_allocator = commands_allocator_guard.as_mut().unwrap();
+        let commands_allocator_new = commands_allocator_new_guard.as_mut().unwrap();
         let commands_bytes_writer = commands_bytes_writer_guard.as_mut().unwrap();
         let commands_bytes_reader = commands_bytes_reader_guard.as_mut().unwrap();
         let commands_data_allocator = commands_data_allocator_guard.as_mut().unwrap();
         let commands_payload_allocator = commands_payload_allocator_guard.as_mut().unwrap();
 
+        println!("Dump: -------------------------------------------------------------------------");
+
+        let bytes = unsafe {
+            std::slice::from_raw_parts(
+                commands_allocator_new.get_buffer_ptr(),
+                commands_allocator_new.get_buffer_size() as usize,
+            )
+        };
+        hexdump::hexdump(bytes);
+
         commands_allocator.clear()?;
+        commands_allocator_new.clear()?;
         commands_data_allocator.clear()?;
         commands_payload_allocator.clear()?;
         commands_bytes_writer.clear();
         commands_bytes_reader.reset();
+
+        // Write current commands count
+        commands_bytes_writer.write_u64(0);
 
         Ok(())
     }

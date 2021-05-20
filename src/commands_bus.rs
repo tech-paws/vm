@@ -33,15 +33,25 @@ impl CommandsBus {
         let state = unsafe { STATE.as_ref() }.unwrap();
         let module_state = state.module_states.get(&address).unwrap();
 
-        let mut bytes_writer_guard = match source {
-            Source::GAPI => module_state.gapi_bytes_writer.lock(),
+        let (mut bytes_writer_guard, mut bytes_reader_guard) = match source {
+            Source::GAPI => {
+                (
+                    module_state.gapi_bytes_writer.lock(),
+                    module_state.gapi_bytes_reader.lock(),
+                )
+            }
             Source::Processor => {
                 todo!();
             }
         };
 
         let bytes_writer = bytes_writer_guard.as_mut().unwrap();
+        let bytes_reader = bytes_reader_guard.as_mut().unwrap();
 
+        // Update commands count
+        let commands_count = bytes_reader.read_u64_at(0);
+
+        bytes_writer.write_u64_at(0, commands_count + 1);
         bytes_writer.write_u64(id);
 
         // Write size of payload in bytes
