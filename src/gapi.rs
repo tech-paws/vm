@@ -63,6 +63,8 @@ pub fn draw_centered_quads(context: &GApiContext, mvp_matrices: &[Mat4f]) {
         commands::gapi::DRAW_CENTERED_QUADS,
         commands::Source::GAPI,
         |bytes_writer| {
+            bytes_writer.write_u64(mvp_matrices.len() as u64);
+
             for mat in mvp_matrices.iter() {
                 mat.write_to_buffers(bytes_writer);
             }
@@ -76,6 +78,8 @@ pub fn draw_quads(context: &GApiContext, mvp_matrices: &[Mat4f]) {
         commands::gapi::DRAW_QUADS,
         commands::Source::GAPI,
         |bytes_writer| {
+            bytes_writer.write_u64(mvp_matrices.len() as u64);
+
             for mat in mvp_matrices.iter() {
                 mat.write_to_buffers(bytes_writer);
             }
@@ -89,6 +93,8 @@ pub fn draw_texts(context: &GApiContext, texts: &[TextData]) {
         commands::gapi::DRAW_TEXTS,
         commands::Source::GAPI,
         |bytes_writer| {
+            bytes_writer.write_u64(texts.len() as u64);
+
             for text in texts.iter() {
                 text.write_to_buffers(bytes_writer);
             }

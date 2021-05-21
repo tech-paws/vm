@@ -4,7 +4,11 @@ use std::{collections::HashMap, time::Instant};
 
 use vm_memory::BufferAccessor;
 
-use crate::{commands::Source, data::{BytesBuffer, Commands, MutBytesBuffer}, module::{self, CLIENT_ID}};
+use crate::{
+    commands::Source,
+    data::{BytesBuffer, Commands, MutBytesBuffer},
+    module::{self, CLIENT_ID},
+};
 use crate::{
     commands_bus::CommandsBus,
     module::{Module, ModuleState},
@@ -70,6 +74,16 @@ impl VMState {
 
         let commands_allocator = commands_allocator_guard.as_mut().unwrap();
 
+        // println!("Dump: -------------------------------------------------------------------------");
+
+        // let bytes = unsafe {
+        //     std::slice::from_raw_parts(
+        //         commands_allocator.get_buffer_ptr(),
+        //         commands_allocator.get_buffer_size() as usize,
+        //     )
+        // };
+        // hexdump::hexdump(bytes);
+
         MutBytesBuffer {
             base: commands_allocator.get_buffer_ptr(),
             size: commands_allocator.get_buffer_size(),
@@ -90,6 +104,10 @@ impl VMState {
 
         for module in self.modules.iter_mut() {
             let mut state = self.module_states.get_mut(&module.id()).unwrap();
+
+            if module.id() == CLIENT_ID {
+                continue;
+            }
 
             match source {
                 Source::GAPI => {
@@ -119,6 +137,8 @@ impl VMState {
         for module in self.modules.iter() {
             let state = self.module_states.get_mut(&module.id()).unwrap();
             state.clear_text_boundaries()?;
+            state.clear_commands(Source::GAPI)?;
+            state.clear_commands(Source::Processor)?;
         }
 
         Ok(())
