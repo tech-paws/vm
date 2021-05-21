@@ -15,7 +15,7 @@ use commands::Source;
 use log;
 
 use crate::module::Module;
-use data::{BytesBuffer, CCommand, Commands};
+use data::{BytesBuffer, CCommand, Commands, MutBytesBuffer};
 use state::VMState;
 
 static mut STATE: Option<VMState> = None;
@@ -69,6 +69,12 @@ pub extern "C" fn tech_paws_vm_get_gapi_commands() -> Commands {
 #[no_mangle]
 pub extern "C" fn tech_paws_vm_get_commands() -> Commands {
     Commands::empty()
+}
+
+#[no_mangle]
+pub extern "C" fn tech_paws_vm_get_commands_buffer() -> MutBytesBuffer {
+    let state = unsafe { STATE.as_mut().unwrap() };
+    state.get_commands_buffer(Source::GAPI)
 }
 
 #[no_mangle]

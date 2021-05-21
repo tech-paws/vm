@@ -155,15 +155,15 @@ impl ModuleState {
         let commands_data_allocator = commands_data_allocator_guard.as_mut().unwrap();
         let commands_payload_allocator = commands_payload_allocator_guard.as_mut().unwrap();
 
-        println!("Dump: -------------------------------------------------------------------------");
+        // println!("Dump: -------------------------------------------------------------------------");
 
-        let bytes = unsafe {
-            std::slice::from_raw_parts(
-                commands_allocator_new.get_buffer_ptr(),
-                commands_allocator_new.get_buffer_size() as usize,
-            )
-        };
-        hexdump::hexdump(bytes);
+        // let bytes = unsafe {
+        //     std::slice::from_raw_parts(
+        //         commands_allocator_new.get_buffer_ptr(),
+        //         commands_allocator_new.get_buffer_size() as usize,
+        //     )
+        // };
+        // hexdump::hexdump(bytes);
 
         commands_allocator.clear()?;
         commands_allocator_new.clear()?;

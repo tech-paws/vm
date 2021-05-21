@@ -1,6 +1,6 @@
 //! Virtual machine primitive datas.
 
-use std::{mem, ops, ptr::null};
+use std::{mem, ops, ptr::{null, null_mut}};
 
 /// Virtual machine command payload.
 #[derive(Debug, Clone)]
@@ -10,6 +10,15 @@ pub struct BytesBuffer {
     pub size: u64,
     /// Base address of the data.
     pub base: *const u8,
+}
+
+#[derive(Debug, Clone)]
+#[repr(C)]
+pub struct MutBytesBuffer {
+    /// Size of the data.
+    pub size: u64,
+    /// Base address of the data.
+    pub base: *mut u8,
 }
 
 /// Virtual machine command.

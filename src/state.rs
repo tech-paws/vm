@@ -2,11 +2,9 @@
 
 use std::{collections::HashMap, time::Instant};
 
-use crate::{
-    commands::Source,
-    data::Commands,
-    module::{self, CLIENT_ID},
-};
+use vm_memory::BufferAccessor;
+
+use crate::{commands::Source, data::{BytesBuffer, Commands, MutBytesBuffer}, module::{self, CLIENT_ID}};
 use crate::{
     commands_bus::CommandsBus,
     module::{Module, ModuleState},
@@ -59,6 +57,23 @@ impl VMState {
         // TODO(sysint64): handle unwraps.
         let client_module_state = self.module_states.get_mut(&module::CLIENT_ID).unwrap();
         client_module_state.get_commands(source)
+    }
+
+    /// Get commands from the root module.
+    pub fn get_commands_buffer(&mut self, source: Source) -> MutBytesBuffer {
+        // TODO(sysint64): handle unwraps.
+        let client_module_state = self.module_states.get_mut(&module::CLIENT_ID).unwrap();
+        let mut commands_allocator_guard = match source {
+            Source::GAPI => client_module_state.gapi_commands_allocator_new.lock(),
+            Source::Processor => todo!(),
+        };
+
+        let commands_allocator = commands_allocator_guard.as_mut().unwrap();
+
+        MutBytesBuffer {
+            base: commands_allocator.get_buffer_ptr(),
+            size: commands_allocator.get_buffer_size(),
+        }
     }
 
     // /// Clear all commands from the root module.
