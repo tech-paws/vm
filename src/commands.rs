@@ -3,7 +3,7 @@
 // TODO(sysint64): Write proper documentation for each of the commands.
 
 /// In what allocator put your data
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 #[repr(C)]
 pub enum Source {
     /// GAPI Allocator

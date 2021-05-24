@@ -1,14 +1,15 @@
 //! Module interface.
 
-use std::{marker::PhantomData, mem, sync::Mutex, time::Instant};
+use std::time::Instant;
 
-use vm_buffers::{ByteOrder, BytesReader, BytesWriter};
+use parking_lot::Mutex;
+use vm_buffers::{ByteOrder, BytesReader, BytesWriter, IntoVMBuffers};
 use vm_memory::{BufferAccessor, RegionAllocator};
 
 use crate::{
     commands::Source,
     commands_bus::CommandsBus,
-    data::{BytesBuffer, CCommand, Command, Commands},
+    data::{CCommand, Commands},
 };
 
 // TODO(sysint64): Make it dynamic
@@ -34,6 +35,8 @@ pub trait Module {
 
 /// Module state.
 pub struct ModuleState {
+    pub id: String,
+
     pub text_boundaries_allocator: Mutex<RegionAllocator>,
 
     /// Rendering commands.
@@ -45,6 +48,12 @@ pub struct ModuleState {
     pub gapi_bytes_writer: Mutex<BytesWriter>,
 
     pub gapi_bytes_reader: Mutex<BytesReader>,
+
+    pub processor_commands_allocator_new: Mutex<RegionAllocator>,
+
+    pub processor_bytes_writer: Mutex<BytesWriter>,
+
+    pub processor_bytes_reader: Mutex<BytesReader>,
 
     /// Here is a data that holds rendering commands.
     pub gapi_commands_data_allocator: Mutex<RegionAllocator>,
@@ -81,13 +90,33 @@ impl ModuleState {
 
         // Write current commands count
         gapi_bytes_writer.write_u64(0);
+        module_id
+            .to_string()
+            .write_to_buffers(&mut gapi_bytes_writer);
+
+        //
+        let processor_commands_allocator_new = RegionAllocator::new(512);
+        let mut processor_bytes_writer =
+            BytesWriter::new(ByteOrder::LittleEndian, &processor_commands_allocator_new);
+        let processor_bytes_reader =
+            BytesReader::new(ByteOrder::LittleEndian, &processor_commands_allocator_new);
+
+        // Write current commands count
+        processor_bytes_writer.write_u64(0);
+        module_id
+            .to_string()
+            .write_to_buffers(&mut processor_bytes_writer);
 
         ModuleState {
+            id: module_id.to_string(),
             text_boundaries_allocator: Mutex::new(RegionAllocator::new(1024 * 1024)),
             gapi_commands_allocator: Mutex::new(RegionAllocator::new(1024 * 1024)),
             gapi_bytes_writer: Mutex::new(gapi_bytes_writer),
             gapi_bytes_reader: Mutex::new(gapi_bytes_reader),
             gapi_commands_allocator_new: Mutex::new(gapi_commands_allocator_new),
+            processor_bytes_writer: Mutex::new(processor_bytes_writer),
+            processor_bytes_reader: Mutex::new(processor_bytes_reader),
+            processor_commands_allocator_new: Mutex::new(processor_commands_allocator_new),
             gapi_commands_data_allocator: Mutex::new(RegionAllocator::new(1024 * 1024)),
             gapi_commands_payload_allocator: Mutex::new(RegionAllocator::new(1024 * 1024)),
             processor_commands_allocator: Mutex::new(RegionAllocator::new(1024 * 1024)),
@@ -103,12 +132,10 @@ impl ModuleState {
     /// Get commands from source.
     /// TODO(sysint64): Use custom allocator instead of Vec.
     pub fn get_commands(&mut self, source: Source) -> Commands {
-        let mut commands_allocator_guard = match source {
+        let mut commands_allocator = match source {
             Source::GAPI => self.gapi_commands_allocator.lock(),
             Source::Processor => self.processor_commands_allocator.lock(),
         };
-
-        let commands_allocator = commands_allocator_guard.as_mut().unwrap();
 
         Commands {
             size: commands_allocator.region.offset as usize,
@@ -119,12 +146,12 @@ impl ModuleState {
     /// Clear all commands and ther data from source.
     pub fn clear_commands(&mut self, source: Source) -> Result<(), &'static str> {
         let (
-            mut commands_allocator_guard,
-            mut commands_allocator_new_guard,
-            mut commands_bytes_writer_guard,
-            mut commands_bytes_reader_guard,
-            mut commands_data_allocator_guard,
-            mut commands_payload_allocator_guard,
+            mut commands_allocator,
+            mut commands_allocator_new,
+            mut commands_bytes_writer,
+            mut commands_bytes_reader,
+            mut commands_data_allocator,
+            mut commands_payload_allocator,
         ) = match source {
             Source::GAPI => {
                 (
@@ -139,31 +166,28 @@ impl ModuleState {
             Source::Processor => {
                 (
                     self.processor_commands_allocator.lock(),
-                    self.gapi_commands_allocator_new.lock(),
-                    self.gapi_bytes_writer.lock(),
-                    self.gapi_bytes_reader.lock(),
+                    self.processor_commands_allocator_new.lock(),
+                    self.processor_bytes_writer.lock(),
+                    self.processor_bytes_reader.lock(),
                     self.processor_commands_data_allocator.lock(),
                     self.processor_commands_payload_allocator.lock(),
                 )
             }
         };
 
-        let commands_allocator = commands_allocator_guard.as_mut().unwrap();
-        let commands_allocator_new = commands_allocator_new_guard.as_mut().unwrap();
-        let commands_bytes_writer = commands_bytes_writer_guard.as_mut().unwrap();
-        let commands_bytes_reader = commands_bytes_reader_guard.as_mut().unwrap();
-        let commands_data_allocator = commands_data_allocator_guard.as_mut().unwrap();
-        let commands_payload_allocator = commands_payload_allocator_guard.as_mut().unwrap();
+        if source == Source::Processor {
+            println!(
+                "Dump: -------------------------------------------------------------------------"
+            );
 
-        // println!("Dump: -------------------------------------------------------------------------");
-
-        // let bytes = unsafe {
-        //     std::slice::from_raw_parts(
-        //         commands_allocator_new.get_buffer_ptr(),
-        //         commands_allocator_new.get_buffer_size() as usize,
-        //     )
-        // };
-        // hexdump::hexdump(bytes);
+            let bytes = unsafe {
+                std::slice::from_raw_parts(
+                    commands_allocator_new.get_buffer_ptr(),
+                    commands_allocator_new.get_buffer_size() as usize,
+                )
+            };
+            hexdump::hexdump(bytes);
+        }
 
         commands_allocator.clear()?;
         commands_allocator_new.clear()?;
@@ -174,16 +198,15 @@ impl ModuleState {
 
         // Write current commands count
         commands_bytes_writer.write_u64(0);
+        self.id
+            .to_string()
+            .write_to_buffers(&mut commands_bytes_writer);
 
         Ok(())
     }
 
     pub fn clear_text_boundaries(&mut self) -> Result<(), &'static str> {
-        self.text_boundaries_allocator
-            .lock()
-            .as_mut()
-            .unwrap()
-            .clear()
+        self.text_boundaries_allocator.lock().clear()
     }
 }
 

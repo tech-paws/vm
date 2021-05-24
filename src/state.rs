@@ -67,12 +67,10 @@ impl VMState {
     pub fn get_commands_buffer(&mut self, source: Source) -> MutBytesBuffer {
         // TODO(sysint64): handle unwraps.
         let client_module_state = self.module_states.get_mut(&module::CLIENT_ID).unwrap();
-        let mut commands_allocator_guard = match source {
+        let commands_allocator = match source {
             Source::GAPI => client_module_state.gapi_commands_allocator_new.lock(),
-            Source::Processor => todo!(),
+            Source::Processor => client_module_state.processor_commands_allocator_new.lock(),
         };
-
-        let commands_allocator = commands_allocator_guard.as_mut().unwrap();
 
         // println!("Dump: -------------------------------------------------------------------------");
 

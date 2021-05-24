@@ -13,6 +13,7 @@ use std::{ffi::CStr, os::raw::c_char};
 
 use commands::Source;
 use log;
+use vm_buffers::BytesWriter;
 
 use crate::module::Module;
 use data::{BytesBuffer, CCommand, Commands, MutBytesBuffer};
@@ -78,14 +79,36 @@ pub extern "C" fn tech_paws_vm_get_commands_buffer() -> MutBytesBuffer {
 }
 
 #[no_mangle]
-pub extern "C" fn tech_paws_vm_gapi_flush() {
+pub extern "C" fn tech_paws_vm_gapi_flush() {}
 
+#[no_mangle]
+pub unsafe extern "C" fn tech_paws_push_command(
+    address: *const c_char,
+    command: CCommand,
+    source: Source,
+) {
+    let state = unsafe { STATE.as_mut().unwrap() };
+    state
+        .client_command_bus
+        .c_push_command(address, command, source);
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn tech_paws_push_command(address: *const c_char, command: CCommand, source: Source) {
-    let state = unsafe { STATE.as_mut().unwrap() };
-    state.client_command_bus.c_push_command(address, command, source);
+pub unsafe extern "C" fn tech_paws_begin_command(
+    address: *const c_char,
+    source: Source,
+    id: u64,
+) -> *mut vm_buffers::c_api::BytesWriter {
+    let state = STATE.as_mut().unwrap();
+    let address: &str = CStr::from_ptr(address).to_str().unwrap();
+    state.client_command_bus.begin_command(address, source, id)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn tech_paws_end_command(address: *const c_char, source: Source) {
+    let state = STATE.as_mut().unwrap();
+    let address: &str = CStr::from_ptr(address).to_str().unwrap();
+    state.client_command_bus.end_command(address, source);
 }
 
 #[no_mangle]
