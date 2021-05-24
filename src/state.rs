@@ -103,10 +103,6 @@ impl VMState {
         for module in self.modules.iter_mut() {
             let mut state = self.module_states.get_mut(&module.id()).unwrap();
 
-            if module.id() == CLIENT_ID {
-                continue;
-            }
-
             match source {
                 Source::GAPI => {
                     if !state.last_time_initialized {

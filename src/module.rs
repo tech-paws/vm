@@ -9,6 +9,7 @@ use vm_memory::{BufferAccessor, RegionAllocator};
 use crate::{
     commands::Source,
     commands_bus::CommandsBus,
+    commands_reader::CommandsReader,
     data::{CCommand, Commands},
 };
 
@@ -129,6 +130,38 @@ impl ModuleState {
         }
     }
 
+    pub fn get_commands_new<F>(&mut self, source: Source, commands_reader_callback: F)
+    where
+        F: FnOnce(&mut CommandsReader),
+    {
+        let mut bytes_reader = match source {
+            Source::GAPI => self.gapi_bytes_reader.lock(),
+            Source::Processor => self.processor_bytes_reader.lock(),
+        };
+
+        let commands_allocator_new = match source {
+            Source::GAPI => self.gapi_commands_allocator_new.lock(),
+            Source::Processor => self.processor_commands_allocator_new.lock(),
+        };
+
+        // if source == Source::Processor {
+        //     println!(
+        //         "Dump: -------------------------------------------------------------------------"
+        //     );
+
+        //     let bytes = unsafe {
+        //         std::slice::from_raw_parts(
+        //             commands_allocator_new.get_buffer_ptr(),
+        //             commands_allocator_new.get_buffer_size() as usize,
+        //         )
+        //     };
+        //     hexdump::hexdump(bytes);
+        // }
+
+        let mut commands_reader = CommandsReader::new(&mut bytes_reader);
+        commands_reader_callback(&mut commands_reader);
+    }
+
     /// Get commands from source.
     /// TODO(sysint64): Use custom allocator instead of Vec.
     pub fn get_commands(&mut self, source: Source) -> Commands {
@@ -174,20 +207,6 @@ impl ModuleState {
                 )
             }
         };
-
-        if source == Source::Processor {
-            println!(
-                "Dump: -------------------------------------------------------------------------"
-            );
-
-            let bytes = unsafe {
-                std::slice::from_raw_parts(
-                    commands_allocator_new.get_buffer_ptr(),
-                    commands_allocator_new.get_buffer_size() as usize,
-                )
-            };
-            hexdump::hexdump(bytes);
-        }
 
         commands_allocator.clear()?;
         commands_allocator_new.clear()?;

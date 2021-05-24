@@ -32,6 +32,7 @@ impl IntoVMBuffers for TextData {
 
 pub struct GApiContext<'a> {
     pub address: &'static str,
+    pub from: &'static str,
     pub commands_bus: &'a mut CommandsBus,
 }
 
@@ -93,6 +94,7 @@ pub fn draw_texts(context: &GApiContext, texts: &[TextData]) {
         commands::gapi::DRAW_TEXTS,
         commands::Source::GAPI,
         |bytes_writer| {
+            context.from.to_string().write_to_buffers(bytes_writer);
             bytes_writer.write_u64(texts.len() as u64);
 
             for text in texts.iter() {

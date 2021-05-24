@@ -4,6 +4,7 @@
 
 pub mod commands;
 pub mod commands_bus;
+pub mod commands_reader;
 pub mod data;
 pub mod gapi;
 pub mod module;

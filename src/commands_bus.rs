@@ -133,7 +133,6 @@ impl CommandsBus {
 
         // Update commands count
         let commands_count = bytes_reader.read_u64_at(0);
-        println!("commands count: {:?}", commands_count);
         bytes_writer.write_u64_at(0, commands_count + 1);
 
         let end_offset = bytes_writer.current_offset();
@@ -155,25 +154,6 @@ impl CommandsBus {
 
     /// Push command to module by address using the allocator `source` to
     /// store commands.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # use assert_approx_eq::assert_approx_eq;
-    /// use std::mem;
-    /// use vm::commands;
-    /// use vm::commands_bus::*;
-    /// use vm::data::*;
-    /// use vm::module;
-    /// use vm::*;
-    /// use vm_memory::*;
-    ///
-    /// unsafe { vm::init() };
-    /// let payload = unsafe { BytesBuffer::new(&[12, 34, 55]) };
-    /// let command = Command::new(commands::gapi::DRAW_LINES, payload);
-    /// let commands_bus = CommandsBus::new();
-    /// commands_bus.push_command(module::CLIENT_ID, command, commands::Source::GAPI);
-    /// ```
     pub fn push_command(&self, address: &'static str, command: Command, source: Source) {
         // TODO(sysint64): handle unwraps.
         let state = unsafe { STATE.as_ref() }.unwrap();
