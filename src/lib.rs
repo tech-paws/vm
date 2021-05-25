@@ -13,11 +13,9 @@ pub mod state;
 use std::{ffi::CStr, os::raw::c_char};
 
 use commands::Source;
-use log;
-use vm_buffers::BytesWriter;
 
 use crate::module::Module;
-use data::{BytesBuffer, CCommand, Commands, MutBytesBuffer};
+use data::{BytesBuffer, MutBytesBuffer};
 use state::VMState;
 
 static mut STATE: Option<VMState> = None;
@@ -33,6 +31,7 @@ pub unsafe fn init() {
     register_module(Box::new(client_module));
 }
 
+/// Initialize VM State.
 #[no_mangle]
 pub unsafe extern "C" fn tech_paws_vm_init() {
     init();
@@ -44,56 +43,36 @@ pub fn register_module(module: Box<dyn Module>) {
     state.register_module(module);
 }
 
+/// Process all commands from all modules.
 #[no_mangle]
 pub extern "C" fn tech_paws_vm_process_commands() {
     let state = unsafe { STATE.as_mut().unwrap() };
-    state.process_commands(Source::Processor);
+    state.process_commands(Source::Processor).unwrap();
 }
 
+/// Process all render commands from all modules.
 #[no_mangle]
 pub extern "C" fn tech_paws_vm_process_render_commands() {
     let state = unsafe { STATE.as_mut().unwrap() };
-    state.process_commands(Source::GAPI);
+    state.process_commands(Source::GAPI).unwrap();
 }
 
+/// Clear current iteration state - commands memory, frame memory etc.
 #[no_mangle]
 pub extern "C" fn tech_paws_vm_flush() {
     let state = unsafe { STATE.as_mut().unwrap() };
-    state.flush();
+    state.flush().unwrap();
 }
 
-#[no_mangle]
-pub extern "C" fn tech_paws_vm_get_gapi_commands() -> Commands {
-    let state = unsafe { STATE.as_mut().unwrap() };
-    state.get_commands(Source::GAPI)
-}
-
-#[no_mangle]
-pub extern "C" fn tech_paws_vm_get_commands() -> Commands {
-    Commands::empty()
-}
-
+// TODO(sysint64): Create API to lock with mutex data
+/// Get commands buffer data.
 #[no_mangle]
 pub extern "C" fn tech_paws_vm_get_commands_buffer() -> MutBytesBuffer {
     let state = unsafe { STATE.as_mut().unwrap() };
     state.get_commands_buffer(Source::GAPI)
 }
 
-#[no_mangle]
-pub extern "C" fn tech_paws_vm_gapi_flush() {}
-
-#[no_mangle]
-pub unsafe extern "C" fn tech_paws_push_command(
-    address: *const c_char,
-    command: CCommand,
-    source: Source,
-) {
-    let state = unsafe { STATE.as_mut().unwrap() };
-    state
-        .client_command_bus
-        .c_push_command(address, command, source);
-}
-
+/// Preparing command for sending.
 #[no_mangle]
 pub unsafe extern "C" fn tech_paws_begin_command(
     address: *const c_char,
@@ -105,6 +84,7 @@ pub unsafe extern "C" fn tech_paws_begin_command(
     state.client_command_bus.begin_command(address, source, id)
 }
 
+/// Finish command and send it to `address`
 #[no_mangle]
 pub unsafe extern "C" fn tech_paws_end_command(address: *const c_char, source: Source) {
     let state = STATE.as_mut().unwrap();
@@ -112,6 +92,7 @@ pub unsafe extern "C" fn tech_paws_end_command(address: *const c_char, source: S
     state.client_command_bus.end_command(address, source);
 }
 
+/// Get client module id.
 #[no_mangle]
 pub extern "C" fn tech_paws_vm_client_id() -> BytesBuffer {
     BytesBuffer {
@@ -120,33 +101,35 @@ pub extern "C" fn tech_paws_vm_client_id() -> BytesBuffer {
     }
 }
 
-#[no_mangle]
-pub extern "C" fn tech_paws_vm_process_flush() {}
-
+/// Log level: trace
 #[no_mangle]
 pub unsafe extern "C" fn tech_paws_vm_log_trace(message: *const c_char) {
     let str = CStr::from_ptr(message).to_str().unwrap();
     log::trace!("{}", str);
 }
 
+/// Log level: error
 #[no_mangle]
 pub unsafe extern "C" fn tech_paws_vm_log_error(message: *const c_char) {
     let str = CStr::from_ptr(message).to_str().unwrap();
     log::error!("{}", str);
 }
 
+/// Log level: warning
 #[no_mangle]
 pub unsafe extern "C" fn tech_paws_vm_log_warn(message: *const c_char) {
     let str = CStr::from_ptr(message).to_str().unwrap();
     log::warn!("{}", str);
 }
 
+/// Log level: debug
 #[no_mangle]
 pub unsafe extern "C" fn tech_paws_vm_log_debug(message: *const c_char) {
     let str = CStr::from_ptr(message).to_str().unwrap();
     log::debug!("{}", str);
 }
 
+/// Log level: info
 #[no_mangle]
 pub unsafe extern "C" fn tech_paws_vm_log_info(message: *const c_char) {
     let str = CStr::from_ptr(message).to_str().unwrap();

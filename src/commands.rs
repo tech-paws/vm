@@ -1,7 +1,5 @@
 //! Available commands
 
-use vm_buffers::BytesReader;
-
 // TODO(sysint64): Write proper documentation for each of the commands.
 
 /// In what allocator put your data
@@ -23,11 +21,13 @@ pub const BEGIN_MACRO: u64 = 0x0001_0002;
 /// End recording macro.
 pub const END_MACRO: u64 = 0x0001_0003;
 
+/// Update current viewport size.
 pub const UPDATE_VIEWPORT: u64 = 0x0001_0004;
 
+/// Add text boundaries.
 pub const ADD_TEXT_BOUNDARIES: u64 = 0x0001_0005;
 
-/// Graphical API commands.
+/// Graphical API commands
 pub mod gapi {
     /// Command id to draw lines.
     pub const DRAW_LINES: u64 = 0x0002_0001;

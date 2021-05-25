@@ -1,14 +1,25 @@
-//! GAPI
+//! Graphical API.
+//!
+//! The `gapi` module is the abstracted interface for sending
+//! render commands.
 
 use vm_buffers::{BytesReader, BytesWriter, IntoVMBuffers};
 use vm_math::{Mat4f, Vec4f};
 
 use crate::{commands, commands_bus::CommandsBus};
 
+/// Data to render text.
 pub struct TextData {
+    /// Asset id for the font to be used to render the text.
     pub font_id: u64,
+
+    /// Font size to be used to render the text.
     pub font_size: u32,
+
+    /// Transformation matrix of the text.
     pub mvp_matrix: Mat4f,
+
+    /// The text to be rendered.
     pub text: String,
 }
 
@@ -30,14 +41,22 @@ impl IntoVMBuffers for TextData {
     }
 }
 
+/// Graphical API context, holds important information to render
 pub struct GApiContext<'a> {
+    /// The address where to send the render commands.
     pub address: &'static str,
+
+    /// Commands sender address.
     pub from: &'static str,
+
+    /// Commands bus used to send commands.
     pub commands_bus: &'a mut CommandsBus,
 }
 
+/// Set current pipeline as color - a shader will be used that colorizes
+/// objects with the `color`.
 pub fn set_color_pipeline(context: &GApiContext, color: Vec4f) {
-    context.commands_bus.push_command_new(
+    context.commands_bus.push_command(
         context.address,
         commands::gapi::SET_COLOR_PIPELINE,
         commands::Source::GAPI,
@@ -47,8 +66,10 @@ pub fn set_color_pipeline(context: &GApiContext, color: Vec4f) {
     );
 }
 
+/// Set current pipeline as texture - a shader will be used that applies
+/// texture to objects. The texture will be obtained by asset id = `id`.
 pub fn set_texture_pipeline(context: &GApiContext, id: u64) {
-    context.commands_bus.push_command_new(
+    context.commands_bus.push_command(
         context.address,
         commands::gapi::SET_TEXTURE_PIPELINE,
         commands::Source::GAPI,
@@ -58,8 +79,12 @@ pub fn set_texture_pipeline(context: &GApiContext, id: u64) {
     );
 }
 
+/// Render a group of quads with a given `mvp_matrices`
+/// that is applied to the quads to display on the screen.
+///
+/// All quads have a center pivot point.
 pub fn draw_centered_quads(context: &GApiContext, mvp_matrices: &[Mat4f]) {
-    context.commands_bus.push_command_new(
+    context.commands_bus.push_command(
         context.address,
         commands::gapi::DRAW_CENTERED_QUADS,
         commands::Source::GAPI,
@@ -73,8 +98,12 @@ pub fn draw_centered_quads(context: &GApiContext, mvp_matrices: &[Mat4f]) {
     );
 }
 
+/// Render a group of quads with a given `mvp_matrices`
+/// that is applied to the quads to display on the screen.
+///
+/// All quads have a pivot point in the upper left corner.
 pub fn draw_quads(context: &GApiContext, mvp_matrices: &[Mat4f]) {
-    context.commands_bus.push_command_new(
+    context.commands_bus.push_command(
         context.address,
         commands::gapi::DRAW_QUADS,
         commands::Source::GAPI,
@@ -88,8 +117,10 @@ pub fn draw_quads(context: &GApiContext, mvp_matrices: &[Mat4f]) {
     );
 }
 
+/// Render a group of texts with a given `texts` that describe
+/// the properties of the texts.
 pub fn draw_texts(context: &GApiContext, texts: &[TextData]) {
-    context.commands_bus.push_command_new(
+    context.commands_bus.push_command(
         context.address,
         commands::gapi::DRAW_TEXTS,
         commands::Source::GAPI,

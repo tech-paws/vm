@@ -1,3 +1,5 @@
+//! Commands reader.
+
 use vm_buffers::BytesReader;
 use vm_buffers::IntoVMBuffers;
 

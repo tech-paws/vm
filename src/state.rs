@@ -1,14 +1,9 @@
 //! Virtual machine state.
 
 use std::{collections::HashMap, time::Instant};
-
 use vm_memory::BufferAccessor;
 
-use crate::{
-    commands::Source,
-    data::{BytesBuffer, Commands, MutBytesBuffer},
-    module::{self, CLIENT_ID},
-};
+use crate::{commands::Source, data::MutBytesBuffer, module};
 use crate::{
     commands_bus::CommandsBus,
     module::{Module, ModuleState},
@@ -35,7 +30,7 @@ impl VMState {
     /// Create a new state.
     pub fn new() -> Self {
         VMState {
-            client_command_bus: CommandsBus::new(CLIENT_ID),
+            client_command_bus: CommandsBus::new(),
             modules: Vec::new(),
             module_states: HashMap::new(),
         }
@@ -57,19 +52,12 @@ impl VMState {
     pub fn render() {}
 
     /// Get commands from the root module.
-    pub fn get_commands(&mut self, source: Source) -> Commands {
-        // TODO(sysint64): handle unwraps.
-        let client_module_state = self.module_states.get_mut(&module::CLIENT_ID).unwrap();
-        client_module_state.get_commands(source)
-    }
-
-    /// Get commands from the root module.
     pub fn get_commands_buffer(&mut self, source: Source) -> MutBytesBuffer {
         // TODO(sysint64): handle unwraps.
         let client_module_state = self.module_states.get_mut(&module::CLIENT_ID).unwrap();
         let commands_allocator = match source {
-            Source::GAPI => client_module_state.gapi_commands_allocator_new.lock(),
-            Source::Processor => client_module_state.processor_commands_allocator_new.lock(),
+            Source::GAPI => client_module_state.gapi_commands.allocator.lock(),
+            Source::Processor => client_module_state.processor_commands.allocator.lock(),
         };
 
         // println!("Dump: -------------------------------------------------------------------------");
@@ -87,13 +75,6 @@ impl VMState {
             size: commands_allocator.get_buffer_size(),
         }
     }
-
-    // /// Clear all commands from the root module.
-    // pub fn clear_commands(&mut self, source: Source) -> Result<(), &'static str> {
-    //     // TODO(sysint64): handle unwraps.
-    //     let client_module_state = self.module_states.get_mut(&module::CLIENT_ID).unwrap();
-    //     client_module_state.clear_commands(source)
-    // }
 
     /// Process all commands for all modules from source.
     /// This method will clear all commands from source for module.
