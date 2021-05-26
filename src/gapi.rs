@@ -42,7 +42,7 @@
 //! To get more examples check out vm_benchmarks.
 
 use vm_buffers::{BytesReader, BytesWriter, IntoVMBuffers};
-use vm_math::{Mat4f, Vec4f};
+use vm_math::{Mat4f, Vec2f, Vec4f};
 
 use crate::{commands, commands_bus::CommandsBus};
 
@@ -150,6 +150,50 @@ pub fn draw_quads(context: &GApiContext, mvp_matrices: &[Mat4f]) {
 
             for mat in mvp_matrices.iter() {
                 mat.write_to_buffers(bytes_writer);
+            }
+        },
+    );
+}
+
+/// Render a group of lines with a given `mvp_matrix`
+/// that is applied to group of lines to display on the screen.
+///
+/// Every two point in `points` describe a line.
+///
+/// Group has a pivot point in the upper left corner.
+pub fn draw_lines(context: &GApiContext, mvp_matrix: &Mat4f, points: &[Vec2f]) {
+    context.commands_bus.push_command(
+        context.address,
+        commands::gapi::DRAW_LINES,
+        commands::Source::GAPI,
+        |bytes_writer| {
+            mvp_matrix.write_to_buffers(bytes_writer);
+            bytes_writer.write_u64(points.len() as u64);
+
+            for point in points.iter() {
+                point.write_to_buffers(bytes_writer);
+            }
+        },
+    );
+}
+
+/// Render a group of connected straight lines with a given `mvp_matrix`
+/// that is applied to group of lines to display on the screen.
+///
+/// Every line connects with a previous point.
+///
+/// Group has a pivot point in the upper left corner.
+pub fn draw_path(context: &GApiContext, mvp_matrix: &Mat4f, points: &[Vec2f]) {
+    context.commands_bus.push_command(
+        context.address,
+        commands::gapi::DRAW_PATH,
+        commands::Source::GAPI,
+        |bytes_writer| {
+            mvp_matrix.write_to_buffers(bytes_writer);
+            bytes_writer.write_u64(points.len() as u64);
+
+            for point in points.iter() {
+                point.write_to_buffers(bytes_writer);
             }
         },
     );
