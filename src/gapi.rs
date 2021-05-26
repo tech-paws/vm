@@ -2,6 +2,44 @@
 //!
 //! The `gapi` module is the abstracted interface for sending
 //! render commands.
+//!
+//! # Examples
+//!
+//! ```rust
+//! use vm::{commands, commands_bus::CommandsBus, gapi, module};
+//! use vm_math::*;
+//!
+//! unsafe { vm::init() };
+//! let mut commands_bus = CommandsBus::new();
+//!
+//! let gapi_context = gapi::GApiContext {
+//!     from: "my_module_id",
+//!     address: module::CLIENT_ID,
+//!     commands_bus: &mut commands_bus,
+//! };
+//!
+//! // Used just for the example
+//! let quad1_mvp_matrix = Mat4f::IDENT;
+//! let quad2_mvp_matrix = Mat4f::IDENT;
+//! let text_mvp_matrix = Mat4f::IDENT;
+//!
+//! gapi::set_color_pipeline(&gapi_context, Vec4f::new(1.0, 1.0, 0.0, 1.0));
+//! gapi::draw_centered_quads(&gapi_context, &[quad1_mvp_matrix, quad2_mvp_matrix]);
+//!
+//! // To render text, we should apply font texture
+//! gapi::set_texture_pipeline(&gapi_context, 0);
+//!
+//! let text_data = gapi::TextData {
+//!     font_id: 0,
+//!     font_size: 20,
+//!     mvp_matrix: text_mvp_matrix,
+//!     text: String::from("Hello World!"),
+//! };
+//!
+//! gapi::draw_texts(&gapi_context, &[text_data]);
+//! ```
+//!
+//! To get more examples check out vm_benchmarks.
 
 use vm_buffers::{BytesReader, BytesWriter, IntoVMBuffers};
 use vm_math::{Mat4f, Vec4f};
