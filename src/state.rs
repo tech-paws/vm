@@ -37,11 +37,13 @@ impl VMState {
     }
 
     /// Register module in the virtual machine.
-    pub fn register_module(&mut self, module: Box<dyn Module>) {
+    pub fn register_module(&mut self, mut module: Box<dyn Module>) {
         assert!(self.modules.len() == self.module_states.len());
 
-        self.module_states
-            .insert(module.id(), ModuleState::new(module.id()));
+        let mut module_state = ModuleState::new(module.id());
+        module.init(&mut module_state);
+
+        self.module_states.insert(module.id(), module_state);
         self.modules.push(module);
     }
 
