@@ -53,7 +53,7 @@ impl CommandsBus {
     ///     },
     /// );
     /// ```
-    pub fn push_command<F>(&self, address: &'static str, id: u64, source: Source, command_writer: F)
+    pub fn push_command<F>(&self, address: &str, id: u64, source: Source, command_writer: F)
     where
         F: FnOnce(&mut BytesWriter),
     {
