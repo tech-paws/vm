@@ -74,6 +74,8 @@ pub struct ModuleState {
     pub delta_time: f32,
 
     pub last_time_initialized: bool,
+
+    pub step_scheduler: Vec<Box<dyn FnOnce(&mut ModuleState)>>,
 }
 
 impl ModuleState {
@@ -88,7 +90,23 @@ impl ModuleState {
             last_time: Instant::now(),
             delta_time: 0.,
             last_time_initialized: false,
+            step_scheduler: Vec::with_capacity(100),
         }
+    }
+
+    pub fn process_scheduler(&mut self) {
+        // let iter = self.step_scheduler.iter();
+        // for f in iter {
+        //     (f)(self);
+        // }
+    }
+
+    pub fn register_scheduler<F>(&mut self, callback: F)
+    where
+        F: 'static,
+        F: FnOnce(&mut ModuleState),
+    {
+        self.step_scheduler.push(Box::new(callback));
     }
 
     pub fn get_commands_new<F>(&mut self, source: Source, commands_reader_callback: F)

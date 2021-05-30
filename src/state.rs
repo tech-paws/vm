@@ -99,6 +99,7 @@ impl VMState {
                     state.clear_commands(Source::GAPI)?;
                 }
                 Source::Processor => {
+                    state.process_scheduler();
                     module.step(&mut state);
                     state.clear_commands(Source::Processor)?;
                 }
