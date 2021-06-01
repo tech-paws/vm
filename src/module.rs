@@ -82,8 +82,8 @@ impl ModuleState {
         ModuleState {
             id: module_id.to_string(),
             text_boundaries_allocator: Mutex::new(RegionAllocator::new(1024 * 1024)),
-            gapi_commands: ModuleCommands::new(module_id, 1024),
-            processor_commands: ModuleCommands::new(module_id, 1024),
+            gapi_commands: ModuleCommands::new(module_id, 1024 * 10),
+            processor_commands: ModuleCommands::new(module_id, 1024 * 10),
             commands_bus: CommandsBus::new(),
             last_time: Instant::now(),
             delta_time: 0.,
