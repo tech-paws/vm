@@ -27,8 +27,8 @@ static mut STATE: Option<VMState> = None;
 /// Should call once in the main thread.
 pub unsafe fn init() {
     STATE = Some(VMState::new());
-    // let client_module = module::ClientModule::new();
-    // register_module(Box::new(client_module));
+    let client_module = module::ClientModule::new();
+    register_module(Box::new(client_module));
 }
 
 /// Initialize VM State.
