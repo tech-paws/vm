@@ -1,9 +1,14 @@
 //! Virtual machine state.
 
 use std::{collections::HashMap, time::Instant};
+use vm_buffers::IntoVMBuffers;
 use vm_memory::BufferAccessor;
 
-use crate::{commands::Source, data::MutBytesBuffer, module};
+use crate::{
+    commands::{self, Source},
+    data::MutBytesBuffer,
+    module::{self, MouseButton, TouchState},
+};
 use crate::{
     commands_bus::CommandsBus,
     module::{Module, ModuleState},
@@ -83,6 +88,43 @@ impl VMState {
     pub fn process_commands(&mut self, source: Source) -> Result<(), &'static str> {
         assert!(self.modules.len() == self.module_states.len());
 
+        let client_info = {
+            let mut client_state = self.module_states.get_mut(module::CLIENT_ID).unwrap();
+            let mut client_info = client_state.client_info.clone();
+
+            if source == Source::Processor {
+                client_state.get_commands_new(Source::Processor, |commands_reader| {
+                    while let Some(command) = commands_reader.next() {
+                        match command.id {
+                            commands::COMMAND_TOUCH_START => {
+                                client_info.touch_state = TouchState::Start;
+                                client_info.mouse_button =
+                                    MouseButton::read_from_buffers(command.bytes_reader);
+                                client_info.touch_x = command.bytes_reader.read_u32() as f32;
+                                client_info.touch_y = command.bytes_reader.read_u32() as f32;
+                            }
+                            commands::COMMAND_TOUCH_END => {
+                                client_info.touch_state = TouchState::End;
+                                client_info.mouse_button =
+                                    MouseButton::read_from_buffers(command.bytes_reader);
+                                client_info.touch_x = command.bytes_reader.read_u32() as f32;
+                                client_info.touch_y = command.bytes_reader.read_u32() as f32;
+                            }
+                            commands::COMMAND_TOUCH_MOVE => {
+                                client_info.touch_state = TouchState::Move;
+                                client_info.move_x = command.bytes_reader.read_u32() as f32;
+                                client_info.move_y = command.bytes_reader.read_u32() as f32;
+                            }
+                            _ => (),
+                        }
+                    }
+                });
+            }
+
+            client_state.client_info = client_info.clone();
+            client_info.clone()
+        };
+
         for module in self.modules.iter_mut() {
             let mut state = self.module_states.get_mut(&module.id()).unwrap();
 
@@ -100,6 +142,7 @@ impl VMState {
                 }
                 Source::Processor => {
                     module.step(&mut state);
+                    state.client_info = client_info.clone();
                     state.clear_commands(Source::Processor)?;
                 }
             }

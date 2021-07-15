@@ -6,7 +6,11 @@ use parking_lot::Mutex;
 use vm_buffers::{ByteOrder, BytesReader, BytesWriter, IntoVMBuffers};
 use vm_memory::RegionAllocator;
 
-use crate::{commands::Source, commands_bus::CommandsBus, commands_reader::CommandsReader};
+use crate::{
+    commands::{self, Source},
+    commands_bus::CommandsBus,
+    commands_reader::CommandsReader,
+};
 
 /// Debug services module id.
 pub const CLIENT_ID: &str = "tech.paws.client";
@@ -55,6 +59,29 @@ impl ModuleCommands {
     }
 }
 
+#[derive(Clone, Debug)]
+pub struct ClientInfo {
+    pub move_x: f32,
+    pub move_y: f32,
+    pub touch_x: f32,
+    pub touch_y: f32,
+    pub touch_state: TouchState,
+    pub mouse_button: MouseButton,
+}
+
+impl ClientInfo {
+    pub fn new() -> Self {
+        Self {
+            move_x: 0.,
+            move_y: 0.,
+            touch_x: 0.,
+            touch_y: 0.,
+            touch_state: TouchState::None,
+            mouse_button: MouseButton::Unknown,
+        }
+    }
+}
+
 /// Module state.
 pub struct ModuleState {
     pub id: String,
@@ -73,7 +100,49 @@ pub struct ModuleState {
 
     pub delta_time: f32,
 
+    pub client_info: ClientInfo,
+
     pub last_time_initialized: bool,
+}
+
+#[derive(Clone, Debug)]
+pub enum MouseButton {
+    Left,
+    Right,
+    Middle,
+    Unknown,
+}
+
+#[derive(Clone, Debug)]
+pub enum TouchState {
+    Start,
+    End,
+    Move,
+    None,
+}
+
+impl IntoVMBuffers for MouseButton {
+    fn read_from_buffers(bytes_reader: &mut BytesReader) -> Self {
+        let state = bytes_reader.read_byte();
+
+        match state {
+            commands::COMMAND_MOUSE_BUTTON_LEFT => MouseButton::Left,
+            commands::COMMAND_MOUSE_BUTTON_RIGHT => MouseButton::Right,
+            commands::COMMAND_MOUSE_BUTTON_MIDDLE => MouseButton::Middle,
+            _ => MouseButton::Unknown,
+        }
+    }
+
+    fn write_to_buffers(&self, bytes_writer: &mut BytesWriter) {
+        let state = match self {
+            MouseButton::Left => commands::COMMAND_MOUSE_BUTTON_LEFT,
+            MouseButton::Right => commands::COMMAND_MOUSE_BUTTON_RIGHT,
+            MouseButton::Middle => commands::COMMAND_MOUSE_BUTTON_MIDDLE,
+            _ => commands::COMMAND_MOUSE_BUTTON_UNKNOWN,
+        };
+
+        bytes_writer.write_byte(state);
+    }
 }
 
 impl ModuleState {
@@ -88,6 +157,7 @@ impl ModuleState {
             last_time: Instant::now(),
             delta_time: 0.,
             last_time_initialized: false,
+            client_info: ClientInfo::new(),
         }
     }
 

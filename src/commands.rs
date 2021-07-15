@@ -27,6 +27,20 @@ pub const UPDATE_VIEWPORT: u64 = 0x0001_0004;
 /// Add text boundaries.
 pub const ADD_TEXT_BOUNDARIES: u64 = 0x0001_0005;
 
+/// On touch start event.
+pub const COMMAND_TOUCH_START: u64 = 0x0001_0006;
+
+/// On touch start event.
+pub const COMMAND_TOUCH_END: u64 = 0x0001_0007;
+
+/// On touch start event.
+pub const COMMAND_TOUCH_MOVE: u64 = 0x0001_0008;
+
+pub const COMMAND_MOUSE_BUTTON_UNKNOWN: u8 = 0;
+pub const COMMAND_MOUSE_BUTTON_LEFT: u8 = 1;
+pub const COMMAND_MOUSE_BUTTON_RIGHT: u8 = 2;
+pub const COMMAND_MOUSE_BUTTON_MIDDLE: u8 = 3;
+
 /// Graphical API commands
 pub mod gapi {
     /// Command id to draw lines.
