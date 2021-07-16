@@ -105,7 +105,7 @@ pub struct ModuleState {
     pub last_time_initialized: bool,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum MouseButton {
     Left,
     Right,
@@ -113,7 +113,7 @@ pub enum MouseButton {
     Unknown,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum TouchState {
     Start,
     End,
