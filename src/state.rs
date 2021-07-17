@@ -4,11 +4,7 @@ use std::{collections::HashMap, time::Instant};
 use vm_buffers::IntoVMBuffers;
 use vm_memory::BufferAccessor;
 
-use crate::{
-    commands::{self, Source},
-    data::MutBytesBuffer,
-    module::{self, ClientEvent, MouseButton},
-};
+use crate::{commands::{self, Source}, data::MutBytesBuffer, module::{self, ClientEvent, MouseButton, StepState}};
 use crate::{
     commands_bus::CommandsBus,
     module::{Module, ModuleState},
@@ -86,8 +82,9 @@ impl VMState {
 
     /// Process all commands for all modules from source.
     /// This method will clear all commands from source for module.
-    pub fn process_commands(&mut self, source: Source) -> Result<(), &'static str> {
+    pub fn process_commands(&mut self, source: Source) -> Result<bool, &'static str> {
         assert!(self.modules.len() == self.module_states.len());
+        let mut render_update = false;
 
         let client_info = {
             let mut client_state = self.module_states.get_mut(module::CLIENT_ID).unwrap();
@@ -146,14 +143,15 @@ impl VMState {
                     state.clear_commands(Source::GAPI)?;
                 }
                 Source::Processor => {
-                    module.step(&mut state);
+                    let step_state = module.step(&mut state);
                     state.client_info = client_info.clone();
                     state.clear_commands(Source::Processor)?;
+                    render_update = render_update || step_state == StepState::RenderUpdate;
                 }
             }
         }
 
-        Ok(())
+        Ok(render_update)
     }
 
     pub fn flush(&mut self) -> Result<(), &'static str> {

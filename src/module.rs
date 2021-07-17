@@ -15,6 +15,12 @@ use crate::{
 /// Debug services module id.
 pub const CLIENT_ID: &str = "tech.paws.client";
 
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum StepState {
+    None,
+    RenderUpdate,
+}
+
 /// Module interface.
 pub trait Module {
     /// Unique module ID
@@ -27,7 +33,7 @@ pub trait Module {
     fn shutdown(&mut self, state: &mut ModuleState);
 
     /// Progress, put here some computations
-    fn step(&mut self, state: &mut ModuleState);
+    fn step(&mut self, state: &mut ModuleState) -> StepState;
 
     /// Rendering
     fn render(&mut self, state: &mut ModuleState);
@@ -265,7 +271,9 @@ impl Module for ClientModule {
 
     fn shutdown(&mut self, _: &mut ModuleState) {}
 
-    fn step(&mut self, _: &mut ModuleState) {}
+    fn step(&mut self, _: &mut ModuleState) -> StepState {
+        StepState::None
+    }
 
     fn render(&mut self, _: &mut ModuleState) {}
 }

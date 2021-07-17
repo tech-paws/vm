@@ -45,9 +45,9 @@ pub fn register_module(module: Box<dyn Module>) {
 
 /// Process all commands from all modules.
 #[no_mangle]
-pub extern "C" fn tech_paws_vm_process_commands() {
+pub extern "C" fn tech_paws_vm_process_commands() -> bool {
     let state = unsafe { STATE.as_mut().unwrap() };
-    state.process_commands(Source::Processor).unwrap();
+    state.process_commands(Source::Processor).unwrap()
 }
 
 /// Process all render commands from all modules.
