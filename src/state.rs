@@ -7,7 +7,7 @@ use vm_memory::BufferAccessor;
 use crate::{
     commands::{self, Source},
     data::MutBytesBuffer,
-    module::{self, MouseButton, TouchState},
+    module::{self, ClientEvent, MouseButton},
 };
 use crate::{
     commands_bus::CommandsBus,
@@ -50,6 +50,7 @@ impl VMState {
 
         self.module_states.insert(module.id(), module_state);
         self.modules.push(module);
+        println!("Registered");
     }
 
     ///
@@ -90,6 +91,9 @@ impl VMState {
 
         let client_info = {
             let mut client_state = self.module_states.get_mut(module::CLIENT_ID).unwrap();
+
+            client_state.client_info.events.clear();
+
             let mut client_info = client_state.client_info.clone();
 
             if source == Source::Processor {
@@ -97,23 +101,24 @@ impl VMState {
                     while let Some(command) = commands_reader.next() {
                         match command.id {
                             commands::COMMAND_TOUCH_START => {
-                                client_info.touch_state = TouchState::Start;
-                                client_info.mouse_button =
-                                    MouseButton::read_from_buffers(command.bytes_reader);
-                                client_info.touch_x = command.bytes_reader.read_u32() as f32;
-                                client_info.touch_y = command.bytes_reader.read_u32() as f32;
+                                client_info.events.push(ClientEvent::MouseDown {
+                                    button: MouseButton::read_from_buffers(command.bytes_reader),
+                                    x: command.bytes_reader.read_u32() as f32,
+                                    y: command.bytes_reader.read_u32() as f32,
+                                });
                             }
                             commands::COMMAND_TOUCH_END => {
-                                client_info.touch_state = TouchState::End;
-                                client_info.mouse_button =
-                                    MouseButton::read_from_buffers(command.bytes_reader);
-                                client_info.touch_x = command.bytes_reader.read_u32() as f32;
-                                client_info.touch_y = command.bytes_reader.read_u32() as f32;
+                                client_info.events.push(ClientEvent::MouseUp {
+                                    button: MouseButton::read_from_buffers(command.bytes_reader),
+                                    x: command.bytes_reader.read_u32() as f32,
+                                    y: command.bytes_reader.read_u32() as f32,
+                                });
                             }
                             commands::COMMAND_TOUCH_MOVE => {
-                                client_info.touch_state = TouchState::Move;
-                                client_info.move_x = command.bytes_reader.read_u32() as f32;
-                                client_info.move_y = command.bytes_reader.read_u32() as f32;
+                                client_info.events.push(ClientEvent::MouseMove {
+                                    x: command.bytes_reader.read_u32() as f32,
+                                    y: command.bytes_reader.read_u32() as f32,
+                                });
                             }
                             _ => (),
                         }
