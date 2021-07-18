@@ -68,12 +68,6 @@ impl ModuleCommands {
 #[derive(Clone, Debug)]
 pub struct ClientInfo {
     pub events: Vec<ClientEvent>,
-    /* pub move_x: f32,
-     * pub move_y: f32,
-     * pub touch_x: f32,
-     * pub touch_y: f32,
-     * pub touch_state: TouchState,
-     * pub mouse_button: MouseButton, */
 }
 
 #[derive(Clone, Debug)]
@@ -81,18 +75,13 @@ pub enum ClientEvent {
     MouseMove { x: f32, y: f32 },
     MouseDown { button: MouseButton, x: f32, y: f32 },
     MouseUp { button: MouseButton, x: f32, y: f32 },
+    WindowResize { w: f32, h: f32 },
 }
 
 impl ClientInfo {
     pub fn new() -> Self {
         Self {
             events: Vec::with_capacity(10),
-            /* move_x: 0.,
-             * move_y: 0.,
-             * touch_x: 0.,
-             * touch_y: 0.,
-             * touch_state: TouchState::None,
-             * mouse_button: MouseButton::Unknown, */
         }
     }
 }

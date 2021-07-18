@@ -4,7 +4,11 @@ use std::{collections::HashMap, time::Instant};
 use vm_buffers::IntoVMBuffers;
 use vm_memory::BufferAccessor;
 
-use crate::{commands::{self, Source}, data::MutBytesBuffer, module::{self, ClientEvent, MouseButton, StepState}};
+use crate::{
+    commands::{self, Source},
+    data::MutBytesBuffer,
+    module::{self, ClientEvent, MouseButton, StepState},
+};
 use crate::{
     commands_bus::CommandsBus,
     module::{Module, ModuleState},
@@ -115,6 +119,12 @@ impl VMState {
                                 client_info.events.push(ClientEvent::MouseMove {
                                     x: command.bytes_reader.read_u32() as f32,
                                     y: command.bytes_reader.read_u32() as f32,
+                                });
+                            }
+                            commands::UPDATE_VIEWPORT => {
+                                client_info.events.push(ClientEvent::WindowResize {
+                                    w: command.bytes_reader.read_u32() as f32,
+                                    h: command.bytes_reader.read_u32() as f32,
                                 });
                             }
                             _ => (),

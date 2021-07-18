@@ -91,6 +91,21 @@ pub struct GApiContext<'a> {
     pub commands_bus: &'a mut CommandsBus,
 }
 
+/// Set render viewport.
+pub fn set_viewport(context: &GApiContext, x: u32, y: u32, w: u32, h: u32) {
+    context.commands_bus.push_command(
+        context.address,
+        commands::gapi::SET_VIEWPORT,
+        commands::Source::GAPI,
+        |bytes_writer| {
+            bytes_writer.write_u32(x);
+            bytes_writer.write_u32(y);
+            bytes_writer.write_u32(w);
+            bytes_writer.write_u32(h);
+        },
+    );
+}
+
 /// Set current pipeline as color - a shader will be used that colorizes
 /// objects with the `color`.
 pub fn set_color_pipeline(context: &GApiContext, color: Vec4f) {

@@ -63,6 +63,9 @@ pub mod gapi {
 
     /// Set current pipelen to texture.
     pub const SET_TEXTURE_PIPELINE: u64 = 0x0002_0007;
+
+    /// Set view port.
+    pub const SET_VIEWPORT: u64 = 0x0002_0008;
 }
 
 /// Transforms commands.
